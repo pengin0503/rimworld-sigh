@@ -64,6 +64,19 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
+      - name: Reject stale compiled DLL in pull requests
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA"
+          if ! git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- Source/ &&
+             git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- 1.7/Assemblies/SimpleSigh.dll; then
+            echo '::error::Source changed without rebuilding the shipped SimpleSigh.dll. Build against the legally obtained 1.7 references and commit the DLL before packaging.'
+            exit 1
+          fi
       - name: Verify runtime-only packaging
         run: python -m unittest discover -s Tests/PackagingTests -v
       - name: Create preview ZIP containing only mod files
