@@ -39,7 +39,7 @@ $ tools/verify.sh            # RIMWORLD_REFERENCE_DIR=<private extraction of rim
 ```
 
 `1.7/Assemblies/SimpleSigh.dll` (Release, deterministic: identical bytes on clean rebuild and across commits,
-no local paths or git commit id embedded) SHA-256 `c4d4189b678170e7ae3b79a18fcee9a6c9372af26fce4ad725bf545a90f8e4d6`.
+no local paths or git commit id embedded) SHA-256 `c4d4189b678170e7ae3b79a18fcee9a6c9372af26fce4ad725bf545a90f8e4d6` at the M2 commit (later commits change the DLL; README lists the current hash).
 (The first committed build embedded the commit id via the SDK's source-revision default; fixed by
 `IncludeSourceRevisionInInformationalVersion=false`.)
 

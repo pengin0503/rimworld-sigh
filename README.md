@@ -29,7 +29,7 @@ it is drawn as a world-space mesh **on the sign's display panel**, not as a floa
 | --- | --- | --- | --- |
 | M1 basic sign | yes | pass | NOT RUN |
 | M2 wall sign, notice board, multi-line layout | yes | pass | NOT RUN |
-| M3 electronic sign | not started | — | — |
+| M3 electronic sign (powered LED) | yes | pass | NOT RUN |
 
 A successful build does not prove the game loads or renders the mod. Every in-game case is listed as
 `NOT RUN` in `docs/testing/m1-manual-checklist.md` and `docs/testing/m2-manual-checklist.md` until someone runs it.
@@ -43,6 +43,8 @@ textures with a system Japanese font. It is **not** a RimWorld screenshot.*
 
 - **Sign / 看板 (1×1)** — standing sign, single line, up to 64 characters.
 - **Wall sign / 壁掛け看板 (1×1)** — mounted on a wall like vanilla wall lamps (place next to a wall, facing it); single line, 64 characters.
+- **Electronic sign / 電光掲示板 (2×1)** — powered (40 W, Electricity research, metal + 2 components). Text glows in the
+  chosen colour only while powered, stays bright at night, hides during power cuts and comes back unchanged; a small glow follows the text colour.
 - **Notice board / 掲示板 (2×1)** — multi-line, up to 256 characters; Enter inserts a line break. Long lines wrap
   (spaces for Latin, between characters for Japanese, basic kinsoku) and shrink to fit. East/west use a portrait board so text stays upright.
 - Material (stuff) colours the frame; the display panel stays light so text remains readable.
@@ -57,7 +59,8 @@ textures with a system Japanese font. It is **not** a RimWorld screenshot.*
 
 ## Install (for testing)
 
-1. `1.7/Assemblies/SimpleSigh.dll` is committed (deterministic Release build; rebuild with `tools/verify.sh` if you change the source).
+1. `1.7/Assemblies/SimpleSigh.dll` is committed (deterministic Release build, SHA-256 `a7b25bfcf3ff0e440d5e7b898749daca8744ba134b78bdbe5d05a88498a84d5a`;
+   rebuild with `tools/verify.sh` if you change the source).
 2. Copy `About`, `1.7`, `Defs`, `Languages`, `Textures` into `RimWorld/Mods/SimpleSigh/`.
 3. Enable **Simple Sigh** after Core and run through `docs/testing/m1-manual-checklist.md`.
 
