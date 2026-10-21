@@ -7,13 +7,20 @@
     <RootNamespace>SimpleSigh</RootNamespace>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <OutputPath>../1.7/Assemblies/</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
     <DebugType>none</DebugType>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  </PropertyGroup>
+
+  <!-- Only Release builds write the shipped DLL; Debug builds stay in the ignored bin/ folder. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <OutputPath>../1.7/Assemblies/</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' != 'Release'">
+    <OutputPath>bin/$(Configuration)/</OutputPath>
   </PropertyGroup>
 
   <!--

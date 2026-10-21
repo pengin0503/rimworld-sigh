@@ -313,8 +313,22 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual(self.prop("AssemblyName"), "SimpleSigh")
         self.assertEqual(self.prop("RootNamespace"), "SimpleSigh")
 
-    def test_outputs_into_versioned_assemblies_folder(self):
-        self.assertEqual(self.prop("OutputPath").replace("\\", "/").rstrip("/"), "../1.7/Assemblies")
+    def output_paths(self):
+        """Map of configuration condition -> OutputPath."""
+        result = {}
+        for group in self.project.iter("PropertyGroup"):
+            node = group.find("OutputPath")
+            if node is not None:
+                result[group.get("Condition") or ""] = node.text.replace("\\", "/").rstrip("/")
+        return result
+
+    def test_only_release_outputs_into_versioned_assemblies_folder(self):
+        paths = self.output_paths()
+        is_release = lambda condition: "== 'Release'" in condition.replace('"', "'")
+        release = [v for k, v in paths.items() if is_release(k)]
+        self.assertEqual(release, ["../1.7/Assemblies"])
+        others = [v for k, v in paths.items() if not is_release(k)]
+        self.assertTrue(others and all("1.7" not in v for v in others), paths)
         self.assertEqual(self.prop("AppendTargetFrameworkToOutputPath"), "false")
 
     def test_game_references_are_not_copied(self):

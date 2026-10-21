@@ -4,7 +4,7 @@
 # None of these steps runs the game; in-game checks live in docs/testing/.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-config=${1:-Debug}
+config=${1:-Release}
 
 echo "== structure tests"
 python3 -m unittest discover -s Tests/StructureTests
@@ -21,4 +21,7 @@ dotnet build Source/SimpleSigh.csproj -c "$config" --nologo -v quiet -warnaserro
 
 echo "== smoke: load SimpleSigh.dll with the 1.7 references (not the game)"
 dotnet run --project Tests/SimpleSigh.GameSmoke -c "$config" -v quiet -- "$PWD"
+if [ "$config" = "Release" ] && ! git diff --quiet -- 1.7/Assemblies/SimpleSigh.dll 2>/dev/null; then
+  echo "NOTE: 1.7/Assemblies/SimpleSigh.dll differs from the committed build; commit it together with the source change."
+fi
 echo "== all local checks passed (in-game checks not covered)"

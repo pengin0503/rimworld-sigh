@@ -21,15 +21,30 @@ it is drawn as a world-space mesh **on the sign's display panel**, not as a floa
 | XML / structure tests | pass (see `docs/testing/`) |
 | Unit tests (game-independent C#) | pass |
 | Compile against RimWorld 1.7 reference assemblies | pass |
-| Smoke: load `SimpleSigh.dll` + 1.7 assemblies in .NET, real `ScribeSaver` write | pass |
+| Smoke: load `SimpleSigh.dll` + 1.7 assemblies in .NET, Def fields checked by reflection, real `ScribeSaver` write | pass |
+| Offline layout preview (mod layout code + real font metrics, not the game) | text inside panels for all signs/rotations |
 | **In-game verification** | **NOT RUN** — no RimWorld executable was available during development |
 
+| Milestone | Implemented | Automated checks | In game |
+| --- | --- | --- | --- |
+| M1 basic sign | yes | pass | NOT RUN |
+| M2 wall sign, notice board, multi-line layout | yes | pass | NOT RUN |
+| M3 electronic sign | not started | — | — |
+
 A successful build does not prove the game loads or renders the mod. Every in-game case is listed as
-`NOT RUN` in `docs/testing/m1-manual-checklist.md` (and the M2 checklist) until someone runs it.
+`NOT RUN` in `docs/testing/m1-manual-checklist.md` and `docs/testing/m2-manual-checklist.md` until someone runs it.
+
+![Offline layout preview (not an in-game screenshot)](docs/images/offline-layout-preview.png)
+
+*Offline layout preview — produced by `tools/preview/render_preview.py` from the mod's own layout code and
+textures with a system Japanese font. It is **not** a RimWorld screenshot.*
 
 ## Features
 
-- **Sign (1×1)** — standing sign, single line, up to 64 characters.
+- **Sign / 看板 (1×1)** — standing sign, single line, up to 64 characters.
+- **Wall sign / 壁掛け看板 (1×1)** — mounted on a wall like vanilla wall lamps (place next to a wall, facing it); single line, 64 characters.
+- **Notice board / 掲示板 (2×1)** — multi-line, up to 256 characters; Enter inserts a line break. Long lines wrap
+  (spaces for Latin, between characters for Japanese, basic kinsoku) and shrink to fit. East/west use a portrait board so text stays upright.
 - Material (stuff) colours the frame; the display panel stays light so text remains readable.
 - Select the sign → **Edit text / 文字を編集**: text, colour palette, size slider (30–100 % of the largest size that fits).
   Cancel never changes the sign. Overlong text and forbidden characters are rejected with a message, never truncated.
@@ -42,8 +57,8 @@ A successful build does not prove the game loads or renders the mod. Every in-ga
 
 ## Install (for testing)
 
-1. Build `SimpleSigh.dll` (below) so that `1.7/Assemblies/SimpleSigh.dll` exists.
-2. Copy the repository folder into `RimWorld/Mods/SimpleSigh/` (About, 1.7, Defs, Languages, Textures are needed).
+1. `1.7/Assemblies/SimpleSigh.dll` is committed (deterministic Release build; rebuild with `tools/verify.sh` if you change the source).
+2. Copy `About`, `1.7`, `Defs`, `Languages`, `Textures` into `RimWorld/Mods/SimpleSigh/`.
 3. Enable **Simple Sigh** after Core and run through `docs/testing/m1-manual-checklist.md`.
 
 ## Build and test
@@ -53,8 +68,8 @@ Game assemblies are **never** committed or copied into the output.
 
 ```bash
 export RIMWORLD_REFERENCE_DIR=/path/to/folder/with/Assembly-CSharp.dll   # or RIMWORLD_GAME_DIR=/path/to/RimWorld
-tools/verify.sh            # structure tests, unit tests, Debug build, smoke
-tools/verify.sh Release    # same with a Release build
+tools/verify.sh            # structure tests, unit tests, Release build into 1.7/Assemblies, smoke
+tools/verify.sh Debug      # same with a Debug build (output stays in Source/bin)
 ```
 
 Individual steps:
@@ -67,6 +82,7 @@ dotnet run --project Tests/SimpleSigh.GameSmoke -- "$PWD"
 ```
 
 Textures are original procedural art: regenerate with `python3 tools/textures/generate_textures.py`.
+Offline layout preview: `python3 tools/preview/render_preview.py out.png [font.ttf]` (needs Pillow).
 
 ## Layout
 
@@ -90,6 +106,7 @@ docs/                  spec, plans, implementation log, test checklists
   missing you see `?` marks (documented, not silent).
 - Emoji and complex scripts are out of scope; they render as `?`.
 - Text keeps one colour per sign.
+- The wall sign uses the same upright plaque art for every rotation (no side-view art).
 
 ## Development records
 
