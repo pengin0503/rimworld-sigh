@@ -51,3 +51,27 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Run xUnit tests (no game DLLs required)
         run: dotnet test Tests/SimpleSigh.Text.Tests/SimpleSigh.Text.Tests.csproj --configuration Release --nologo --verbosity normal
+
+  packaging:
+    name: Install-ready ZIP packaging
+    needs: [structure, unit-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Verify runtime-only packaging
+        run: python -m unittest discover -s Tests/PackagingTests -v
+      - name: Create preview ZIP containing only mod files
+        run: python tools/package_release.py --version v0.0.0-pr --output dist/SimpleSigh-pr.zip
+      - name: Upload install-ready preview ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/SimpleSigh-pr.zip
+          archive: false
+          if-no-files-found: error
+          retention-days: 30
