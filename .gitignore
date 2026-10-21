@@ -1,0 +1,10 @@
+# Game/third-party assemblies must never be redistributed.
+*.dll
+**/bin/
+**/obj/
+.vs/
+.idea/
+.superpowers/
+.rimworld-game/
+*.user
+*.suo

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <SimpleSigh_EditText>Edit sign</SimpleSigh_EditText>
+  <SimpleSigh_InvalidText>Invalid sign text.</SimpleSigh_InvalidText>
+  <SimpleSigh_BasicSignLabel>Simple sign</SimpleSigh_BasicSignLabel>
+  <SimpleSigh_WallSignLabel>Wall-mounted sign</SimpleSigh_WallSignLabel>
+  <SimpleSigh_NoticeBoardLabel>Notice board</SimpleSigh_NoticeBoardLabel>
+  <SimpleSigh_Save>Apply</SimpleSigh_Save>
+  <SimpleSigh_Cancel>Cancel</SimpleSigh_Cancel>
+</LanguageData>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Defs>
+  <ThingDef ParentName="FurnitureBase">
+    <defName>SimpleSigh_BasicSign</defName>
+    <label>simple sign</label>
+    <description>A material-dependent sign with editable text.</description>
+    <graphicData>
+      <texPath>Things/Building/SimpleSign</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(1,1)</drawSize>
+    </graphicData>
+    <size>(1,1)</size>
+    <stuffCategories><li>Woody</li><li>Stony</li><li>Metallic</li></stuffCategories>
+    <costStuffCount>30</costStuffCount>
+    <rotatable>false</rotatable>
+    <passability>Standable</passability>
+    <castEdgeShadows>false</castEdgeShadows>
+    <drawGUIOverlay>true</drawGUIOverlay>
+    <statBases><MaxHitPoints>80</MaxHitPoints><WorkToBuild>500</WorkToBuild><Mass>2</Mass><Beauty>1</Beauty></statBases>
+    
+    <comps>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>64</maxElements>
+        <multiline>false</multiline>
+      </li>
+    </comps>
+  </ThingDef>
+</Defs>

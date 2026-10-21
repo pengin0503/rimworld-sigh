@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>SimpleSigh</AssemblyName>
+    <RootNamespace>SimpleSigh</RootNamespace>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RimWorldGameDir Condition="'$(RimWorldGameDir)'==''">$(RIMWORLD_GAME_DIR)</RimWorldGameDir>
+    <OutputPath>../1.7/Assemblies/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp"><HintPath>$(RimWorldGameDir)/Assembly-CSharp.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="Waylith"><HintPath>$(RimWorldGameDir)/Waylith.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityStubs"><HintPath>$(RimWorldGameDir)/UnityStubs.dll</HintPath><Private>False</Private></Reference>
+  </ItemGroup>
+</Project>

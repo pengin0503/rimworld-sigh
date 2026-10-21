@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Defs>
+  <ThingDef ParentName="FurnitureBase">
+    <defName>SimpleSigh_WallSign</defName>
+    <label>wall-mounted sign</label>
+    <description>A small sign for walls.</description>
+    <graphicData>
+      <texPath>Things/Building/SimpleWallSign</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(1,1)</drawSize>
+    </graphicData>
+    <size>(1,1)</size>
+    <stuffCategories><li>Woody</li><li>Stony</li><li>Metallic</li></stuffCategories>
+    <costStuffCount>30</costStuffCount>
+    <rotatable>true</rotatable>
+    <passability>Standable</passability>
+    <castEdgeShadows>false</castEdgeShadows>
+    <drawGUIOverlay>true</drawGUIOverlay>
+    <statBases><MaxHitPoints>80</MaxHitPoints><WorkToBuild>500</WorkToBuild><Mass>2</Mass><Beauty>1</Beauty></statBases>
+    <building><isEdifice>false</isEdifice><canPlaceOverWall>true</canPlaceOverWall></building>
+    <clearBuildingArea>false</clearBuildingArea>
+    <comps>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>64</maxElements>
+        <multiline>false</multiline>
+      </li>
+    </comps>
+  </ThingDef>
+</Defs>
