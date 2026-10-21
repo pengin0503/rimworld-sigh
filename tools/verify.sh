@@ -18,4 +18,7 @@ if [ -z "${RIMWORLD_REFERENCE_DIR:-}" ] && [ -z "${RIMWORLD_GAME_DIR:-}" ]; then
   exit 3
 fi
 dotnet build Source/SimpleSigh.csproj -c "$config" --nologo -v quiet -warnaserror
+
+echo "== smoke: load SimpleSigh.dll with the 1.7 references (not the game)"
+dotnet run --project Tests/SimpleSigh.GameSmoke -c "$config" -v quiet -- "$PWD"
 echo "== all local checks passed (in-game checks not covered)"

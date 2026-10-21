@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Loads the built SimpleSigh.dll together with the RimWorld 1.7 reference assemblies in a plain
+    .NET process. This is NOT the game: it only proves the assembly's types resolve against 1.7
+    (what RimWorld's ModAssemblyHandler.AssemblyIsUsable checks) and that our Def XML maps onto our
+    classes through the game's own XML loader. Requires RIMWORLD_REFERENCE_DIR.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RimWorldReferenceDir>$(RIMWORLD_REFERENCE_DIR)</RimWorldReferenceDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp"><HintPath>$(RimWorldReferenceDir)/Assembly-CSharp.dll</HintPath></Reference>
+    <Reference Include="Waylith"><HintPath>$(RimWorldReferenceDir)/Waylith.dll</HintPath></Reference>
+    <Reference Include="UnityStubs"><HintPath>$(RimWorldReferenceDir)/UnityStubs.dll</HintPath></Reference>
+    <ProjectReference Include="../../Source/SimpleSigh.csproj" />
+  </ItemGroup>
+
+</Project>
