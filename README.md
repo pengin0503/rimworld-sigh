@@ -1,117 +1,146 @@
-# Simple Sigh (RimWorld 1.7)
+# Simple Sigh — RimWorld 1.7 用の自由入力看板 MOD
 
-木材・石材・金属で建てられるバニラ風の看板 MOD です。日本語・英数字・記号を自由に入力でき、
-文字は浮動ラベルではなく **看板の表示面（パネル）の上に、ワールド空間のメッシュとして** 描画されます。
+**Simple Sigh** は、コロニーに自由な文章を書ける看板を追加する MOD です。
+木材・石材・金属で作る小さな看板から、壁掛け看板、複数行の掲示板、電気で光る電光掲示板まで用意しています。
+日本語・英数字・記号を入力し、看板の表示面に文字を描画することを目的としています。
 
-Vanilla-style signs built from wood, stone or metal. Type any text (Japanese, letters, digits, symbols);
-it is drawn as a world-space mesh **on the sign's display panel**, not as a floating label.
+> **現在はテスト版です。** RimWorld 1.7 の参照 DLL に対するビルドと自動テストは実施していますが、
+> **実際のゲーム内起動・日本語の表示・セーブ／ロード・電力動作は未検証**です。
+> 既存セーブへ導入する場合は必ずバックアップしてください。
 
-| Item | Value |
+| 項目 | 内容 |
 | --- | --- |
-| Name | Simple Sigh |
+| MOD 名 | Simple Sigh |
 | packageId | `pengin0503.simplesigh` |
-| Assembly | `1.7/Assemblies/SimpleSigh.dll` |
-| Game version | RimWorld 1.7 only |
-| Required mods | none (Harmony is **not** used) |
+| 対応ゲーム | RimWorld **1.7 のみ** |
+| 前提 MOD | なし（Harmony も不要） |
+| 同梱される DLL | `1.7/Assemblies/SimpleSigh.dll` |
+| 開発・試用状況 | M1（基本看板）、M2（壁掛け・掲示板）、M3（電光掲示板）を実装。**ゲーム内は未確認** |
 
-## Status — read this first
+## ゲーム内でできること
 
-| Layer | State |
+### 4種類の看板
+
+| 建築物 | サイズ | 主な機能 |
+| --- | --- | --- |
+| **看板** | 1×1 | 木・石・金属で作成。最大64文字・1行 |
+| **壁掛け看板** | 1×1 | 壁に取り付ける小型看板。最大64文字・1行 |
+| **掲示板** | 2×1 | 最大256文字・複数行。日本語の文字単位・英語の単語単位で自動折り返し |
+| **電光掲示板** | 2×1 | 最大256文字・複数行。研究「電気」が必要。40W消費し、停電中は文字が消えて復電時に復元 |
+
+**使用例：** 倉庫に「食料保管庫」、寝室に「来客用」、工房に「加工室」、入口に「立入禁止」などの文字を表示できます。
+
+### 看板への文字入力
+
+1. ゲーム内の建築メニューから看板を選び、建設します。素材が選べる看板は木材・石材・金属から選択できます。
+2. 建設した看板をクリックし、**「文字を編集」**（Edit text）を押します。
+3. 文字を入力し、文字色と大きさを設定して **OK** で確定します。**キャンセル**すると変更されません。
+4. 掲示板・電光掲示板では改行を入力できます。画面に収まるよう文字を折り返し／縮小します。
+
+看板の **「文字をコピー」／「文字を貼り付け」** で別の看板に設定を複製できます。
+入力上限を超えた場合や使用できない制御文字は、黙って切り捨てずエラーとして扱います。
+フォントに存在しない文字は `?` に置き換わる場合があります（元の文章は保持）。
+
+**電光掲示板**は金属と工業用コンポーネント2個で建築する想定です。
+電力が供給される間だけ文字と周囲の小さな光が点灯し、停電時には表示が消えます。
+実際の明るさ・文字位置・壁への設置方法などはゲーム内での最終確認が必要です。
+
+## インストール方法
+
+### 方法A：GitHub Releases からZIPをダウンロード（推奨）
+
+1. **[Releases（配布ページ）](https://github.com/pengin0503/rimworld-sigh/releases)** を開きます。リリースがまだ存在しない場合は、方法Bで試用できます。
+2. リリースの **Assets** から `SimpleSigh-vX.Y.Z.zip` をダウンロードします。GitHub が自動で表示する **Source code (zip)** はMOD用のZIPではありません。
+3. ZIPを**一度**展開します。中に `SimpleSigh` フォルダが1つあります。
+4. この `SimpleSigh` フォルダを、RimWorldインストール先の `Mods` フォルダにコピーします。
+
+例（Steam版Windowsの標準的な場所）：
+
+```text
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SimpleSigh\
+├─ About\About.xml
+├─ 1.7\Assemblies\SimpleSigh.dll
+├─ Defs\
+├─ Languages\
+└─ Textures\
+```
+
+5. RimWorld **1.7** を起動して「MOD」メニューで **Simple Sigh** を有効にします。順序は Core の後に配置し、ゲームを再起動してください。
+6. 新規セーブ（またはバックアップした既存セーブ）でまず基本看板から確認してください。
+
+ZIPはMODに必要な**実行時ファイルだけ**を収録します。`Source`、`Tests`、`docs`、ゲーム本体のDLLは含みません。
+
+### 方法B：PRで開発中のテスト版を入れる
+
+GitHub Releaseが未作成でも、**[PR #3 のCI実行一覧](https://github.com/pengin0503/rimworld-sigh/pull/3/checks)** の成功した `Simple Sigh CI` を開くと、
+`SimpleSigh-pr.zip` のテスト用Artifactをダウンロードできます。
+展開後は方法Aと同じように `SimpleSigh` フォルダを `RimWorld/Mods/` に置いてください。
+GitHubへのログインが必要な場合や、Artifactの保存期間（30日）によって入手できない場合があります。
+
+**PRを作成・マージしただけではMODは自動的にゲームへインストールされません。**
+上記のようにファイルをダウンロード・配置し、ゲーム内で有効化してください。
+
+### インストールできない場合
+
+- フォルダが `Mods/SimpleSigh/SimpleSigh/About/About.xml` のように二重になっていないか確認。
+- RimWorld のバージョンが **1.7** であることを確認。
+- `SimpleSigh.dll` が `Mods/SimpleSigh/1.7/Assemblies/` に存在することを確認。
+- ゲーム内でエラーが出たらログと再現手順を添えて [Issues](https://github.com/pengin0503/rimworld-sigh/issues) に報告してください。
+- セーブ破損を避けるため、検証中はバックアップ済みのセーブを使ってください。
+
+## 現在の検証状況
+
+| 確認項目 | 現状 |
 | --- | --- |
-| XML / structure tests | pass (see `docs/testing/`) |
-| Unit tests (game-independent C#) | pass |
-| Compile against RimWorld 1.7 reference assemblies | pass |
-| Smoke: load `SimpleSigh.dll` + 1.7 assemblies in .NET, Def fields checked by reflection, real `ScribeSaver` write | pass |
-| Offline layout preview (mod layout code + real font metrics, not the game) | text inside panels for all signs/rotations |
-| **In-game verification** | **NOT RUN** — no RimWorld executable was available during development |
+| XML・構造テスト | 実装済み（RimWorld Coreを必要とする追加確認は環境次第） |
+| C#ユニットテスト（文章・描画レイアウト等） | 実装済み・CIあり |
+| ZIPが必要なファイルのみを含むか | 専用の回帰テストとCIで確認 |
+| 1.7参照DLLによるコンパイル・スモークテスト | 開発環境で実施済み／公開CIでは未実施 |
+| **ゲーム本体でのプレイ** | **NOT RUN（未確認）** |
 
-| Milestone | Implemented | Automated checks | In game |
-| --- | --- | --- | --- |
-| M1 basic sign | yes | pass | NOT RUN |
-| M2 wall sign, notice board, multi-line layout | yes | pass | NOT RUN |
-| M3 electronic sign (powered LED) | yes | pass | NOT RUN |
+![オフラインで描画したレイアウトプレビュー（ゲーム画面ではありません）](docs/images/offline-layout-preview.png)
 
-A successful build does not prove the game loads or renders the mod. Every in-game case is listed as
-`NOT RUN` in `docs/testing/m1-manual-checklist.md`, `m2-manual-checklist.md` and `m3-manual-checklist.md` until someone runs it.
+*上の画像はオフラインのレイアウト計算によるプレビューです。RimWorld内のスクリーンショットではありません。*
 
-![Offline layout preview (not an in-game screenshot)](docs/images/offline-layout-preview.png)
+## 開発・ビルド・配布の仕組み
 
-*Offline layout preview — produced by `tools/preview/render_preview.py` from the mod's own layout code and
-textures with a system Japanese font. It is **not** a RimWorld screenshot.*
-
-## Features
-
-- **Sign / 看板 (1×1)** — standing sign, single line, up to 64 characters.
-- **Wall sign / 壁掛け看板 (1×1)** — mounted on a wall like vanilla wall lamps (place next to a wall, facing it); single line, 64 characters.
-- **Notice board / 掲示板 (2×1)** — multi-line, up to 256 characters; Enter inserts a line break. Long lines wrap
-  (spaces for Latin, between characters for Japanese, basic kinsoku) and shrink to fit. East/west use a portrait board so text stays upright.
-- **Electronic sign / 電光掲示板 (2×1)** — powered (40 W, Electricity research, metal + 2 components). Text glows in the
-  chosen colour only while powered, stays bright at night, hides during power cuts and comes back unchanged; a small glow follows the text colour.
-- Material (stuff) colours the frame; the display panel stays light (dark screen on the electronic sign) so text remains readable.
-- Select the sign → **Edit text / 文字を編集**: text, colour palette, size slider (30–100 % of the largest size that fits).
-  Cancel never changes the sign. Overlong text and forbidden characters are rejected with a message, never truncated.
-- **Copy / paste text** between signs.
-- Text is fitted (shrunk) to the panel and clipped so it never leaves the board.
-- Characters the current game font cannot draw are shown as `?` and noted in the inspect pane.
-- Saves: text, colour and size are stored per sign; minify/reinstall keeps them.
-- Rendering cost: one cached mesh per sign, rebuilt only when something visible changes; released on
-  despawn, destroy, map removal and game change. Dev mode shows cache counters in the inspect pane.
-
-## Install (for testing)
-
-1. `1.7/Assemblies/SimpleSigh.dll` is committed (deterministic Release build, SHA-256 `a7b25bfcf3ff0e440d5e7b898749daca8744ba134b78bdbe5d05a88498a84d5a`;
-   rebuild with `tools/verify.sh` if you change the source).
-2. Copy `About`, `1.7`, `Defs`, `Languages`, `Textures` into `RimWorld/Mods/SimpleSigh/`.
-3. Enable **Simple Sigh** after Core and run through `docs/testing/m1-manual-checklist.md`.
-
-## Build and test
-
-Requirements: .NET SDK 10, Python 3, and RimWorld 1.7's `Assembly-CSharp.dll`, `Waylith.dll`, `UnityStubs.dll`.
-Game assemblies are **never** committed or copied into the output.
+開発環境には.NET 10 SDK、Python 3、RimWorld 1.7 の
+`Assembly-CSharp.dll`、`Waylith.dll`、`UnityStubs.dll` が必要です。
+ゲームDLLはリポジトリや配布ZIPには含めません。
 
 ```bash
-export RIMWORLD_REFERENCE_DIR=/path/to/folder/with/Assembly-CSharp.dll   # or RIMWORLD_GAME_DIR=/path/to/RimWorld
-tools/verify.sh            # structure tests, unit tests, Release build into 1.7/Assemblies, smoke
-tools/verify.sh Debug      # same with a Debug build (output stays in Source/bin)
+export RIMWORLD_REFERENCE_DIR=/path/to/RimWorld_1.7_references
+tools/verify.sh
+python -m unittest discover -s Tests/PackagingTests -v
+python tools/package_release.py --version v0.1.0-test --output dist/SimpleSigh-v0.1.0-test.zip
 ```
 
-Individual steps:
+`.github/workflows/ci.yml` はPRへの更新時にXMLテスト・C#単体テスト・ZIPパッケージングテストを実行し、成功時は試用ZIPをArtifactとして添付します。
+
+`.github/workflows/release.yml` は **mainに含まれるコミットへ`v`で始まるタグをpushした場合のみ**、
+再度テスト・ZIP作成を行い、GitHub ReleaseのAssetsに直接ダウンロードできるZIPをアップロードします。
+ゲーム内テストが終わるまでは**プレリリース**として公開します。単なるPRのマージではReleaseは作られません。
+
+例（ゲーム内テスト未完了のテスト版タグを切る場合。**mainへマージ後**）：
 
 ```bash
-python3 -m unittest discover -s Tests/StructureTests -v
-dotnet test Tests/SimpleSigh.Text.Tests/SimpleSigh.Text.Tests.csproj
-dotnet build Source/SimpleSigh.csproj -c Release
-dotnet run --project Tests/SimpleSigh.GameSmoke -- "$PWD"
+git checkout main
+git pull --ff-only
+git tag v0.1.0-test.1
+git push origin v0.1.0-test.1
 ```
 
-Textures are original procedural art: regenerate with `python3 tools/textures/generate_textures.py`.
-Offline layout preview: `python3 tools/preview/render_preview.py out.png [font.ttf]` (needs Pillow).
+ゲーム内での確認は以下のチェックリストを参照してください：
+`docs/testing/m1-manual-checklist.md`、
+`docs/testing/m2-manual-checklist.md`、
+`docs/testing/m3-manual-checklist.md`。
 
-## Layout
+その他の設計・実装判断は `docs/development/implementation-log.md` に記録されています。
 
-```
-About/                 mod metadata
-Defs/ThingDefs/        sign ThingDefs
-Languages/             English and Japanese strings
-Textures/              generated sign art (+ CutoutComplex masks)
-Source/Text/           text rules, edit session, save codec (no game dependency)
-Source/Layout/         panel geometry, fitting, glyph quads, render cache slot (no game dependency)
-Source/Signs/          ThingComp, editor dialog, clipboard
-Source/Rendering/      1.7 text backend adapter, mesh renderer, cache lifecycle
-Tests/                 Python structure tests, xUnit tests, game-assembly smoke harness
-docs/                  spec, plans, implementation log, test checklists
-```
+## 制限・未検証事項
 
-## Known limitations
-
-- Whether Japanese glyphs are present in the game's font atlas when the game language is not Japanese
-  depends on RimWorld 1.7's text backend, which is not part of the reference assemblies. If they are
-  missing you see `?` marks (documented, not silent).
-- Emoji and complex scripts are out of scope; they render as `?`.
-- Text keeps one colour per sign.
-- The wall sign uses the same upright plaque art for every rotation (no side-view art).
-
-## Development records
-
-- `docs/development/implementation-log.md` — technical decisions with evidence.
-- `docs/testing/` — checklists and acceptance records (build vs. in-game kept separate).
+- 日本語以外のゲーム言語で日本語グリフが表示できるかは未確認です。
+- 文字の向き・回転・照明・霧・UIスケール・電光掲示板の復電動作は実機確認が必要です。
+- 絵文字・複雑な書記体系の完全対応、LEDスクロール、3×1サイズの掲示板は未実装です。
+- 複数選択した看板の一括編集、長文入力欄のスクロールバーは未対応です。
+- 現時点で、既存セーブからMODを削除した場合の互換性は保証しません。
