@@ -165,6 +165,165 @@ class LanguageTests(unittest.TestCase):
         self.assertEqual(set(keyed("English")), set(keyed("Japanese")))
 
 
+def source_text():
+    texts = {}
+    for file in iter_files(path("Source"), ".cs"):
+        with open(file, encoding="utf-8") as handle:
+            texts[file] = handle.read()
+    return texts
+
+
+def read_png(file):
+    """Minimal 8-bit RGBA/RGB PNG decoder (all filter types) returning (width, height, rows of RGBA tuples)."""
+    import zlib
+    with open(file, "rb") as handle:
+        data = handle.read()
+    pos, idat, width, height, channels = 8, b"", 0, 0, 4
+    while pos < len(data):
+        length = struct.unpack(">I", data[pos:pos + 4])[0]
+        kind, body = data[pos + 4:pos + 8], data[pos + 8:pos + 8 + length]
+        if kind == b"IHDR":
+            width, height, depth, color_type = struct.unpack(">IIBB", body[:10])
+            if depth != 8 or color_type not in (2, 6):
+                raise AssertionError(f"{file}: unsupported PNG format")
+            channels = 4 if color_type == 6 else 3
+        elif kind == b"IDAT":
+            idat += body
+        pos += 12 + length
+    raw, stride, rows, prev = zlib.decompress(idat), width * channels, [], bytearray(width * channels)
+    for y in range(height):
+        start = y * (stride + 1)
+        filt, line = raw[start], bytearray(raw[start + 1:start + 1 + stride])
+        for i in range(stride):
+            a = line[i - channels] if i >= channels else 0
+            b = prev[i]
+            c = prev[i - channels] if i >= channels else 0
+            if filt == 1:
+                line[i] = (line[i] + a) & 255
+            elif filt == 2:
+                line[i] = (line[i] + b) & 255
+            elif filt == 3:
+                line[i] = (line[i] + (a + b) // 2) & 255
+            elif filt == 4:
+                p = a + b - c
+                pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                line[i] = (line[i] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255
+        rows.append([tuple(line[x * channels:(x + 1) * channels]) + ((255,) if channels == 3 else ()) for x in range(width)])
+        prev = line
+    return width, height, rows
+
+
+def parse_rect(text):
+    values = [float(v) for v in text.strip().strip("()").split(",")]
+    if len(values) != 4:
+        raise AssertionError(f"bad rect {text}")
+    return values
+
+
+def comp_props(resolved, class_name):
+    comps = resolved.find("comps")
+    matches = [li for li in comps if li.get("Class") == class_name] if comps is not None else []
+    if len(matches) != 1:
+        raise AssertionError(f"expected one {class_name} comp, found {len(matches)}")
+    return matches[0]
+
+
+class ProjectTests(unittest.TestCase):
+    GAME_REFERENCES = ("Assembly-CSharp", "Waylith", "UnityStubs")
+
+    def setUp(self):
+        self.project = parse("Source", "SimpleSigh.csproj")
+
+    def prop(self, name):
+        values = [n.text for n in self.project.iter(name) if n.text]
+        self.assertTrue(values, f"{name} missing")
+        return values[0]
+
+    def test_targets_net10_and_names_assembly(self):
+        self.assertEqual(self.prop("TargetFramework"), "net10.0")
+        self.assertEqual(self.prop("AssemblyName"), "SimpleSigh")
+        self.assertEqual(self.prop("RootNamespace"), "SimpleSigh")
+
+    def test_outputs_into_versioned_assemblies_folder(self):
+        self.assertEqual(self.prop("OutputPath").replace("\\", "/").rstrip("/"), "../1.7/Assemblies")
+        self.assertEqual(self.prop("AppendTargetFrameworkToOutputPath"), "false")
+
+    def test_game_references_are_not_copied(self):
+        refs = {r.get("Include"): r for r in self.project.iter("Reference")}
+        for name in self.GAME_REFERENCES:
+            self.assertIn(name, refs)
+            self.assertEqual(refs[name].findtext("Private"), "false", name)
+
+    def test_no_harmony_reference_without_dependency(self):
+        refs = {r.get("Include") for r in self.project.iter("Reference")}
+        packages = {r.get("Include") for r in self.project.iter("PackageReference")}
+        uses_harmony = "0Harmony" in refs or "Lib.Harmony" in packages
+        deps = parse("About", "About.xml").find("modDependencies")
+        declared = deps is not None and any(li.findtext("packageId") == "brrainz.harmony" for li in deps)
+        self.assertEqual(uses_harmony, declared)
+
+
+class SignCompTests(unittest.TestCase):
+    PROPS = "SimpleSigh.Signs.CompProperties_SignText"
+
+    def test_basic_sign_is_single_line_64(self):
+        props = comp_props(thing_def("SimpleSigh_BasicSign"), self.PROPS)
+        self.assertEqual(props.findtext("maxElements"), "64")
+        self.assertEqual(props.findtext("multiline"), "false")
+
+    def test_panel_rects_lie_on_untinted_panel(self):
+        """Text is placed inside panelRect; that area must be the light, untinted panel."""
+        for d in all_thing_defs():
+            if d.get("Abstract") == "True" or d.find("graphicData") is None:
+                continue
+            resolved = thing_def(d.findtext("defName"))
+            comps = resolved.find("comps")
+            props = [li for li in comps if li.get("Class") == self.PROPS] if comps is not None else []
+            if not props:
+                continue
+            graphic = resolved.find("graphicData")
+            tex = graphic.findtext("texPath")
+            multi = graphic.findtext("graphicClass") == "Graphic_Multi"
+            cases = [(tex + ("_north" if multi else ""), props[0].findtext("panelRect"))]
+            if multi:
+                cases.append((tex + "_east", props[0].findtext("panelRectHorizontal") or props[0].findtext("panelRect")))
+            for name, rect_text in cases:
+                self.assertTrue(rect_text, f"{d.findtext('defName')} needs panelRect")
+                x, y, w, h = parse_rect(rect_text)
+                self.assertTrue(0 <= x and 0 <= y and x + w <= 1.0001 and y + h <= 1.0001, rect_text)
+                width, height, mask = read_png(path("Textures", name + ("m" if multi else "_m") + ".png"))
+                _, _, color = read_png(path("Textures", name + ".png"))
+                x0, x1 = round(x * width), round((x + w) * width) - 1
+                y0, y1 = round((1 - y - h) * height), round((1 - y) * height) - 1
+                for px in range(x0, x1 + 1, max(1, (x1 - x0) // 8)):
+                    for py in range(y0, y1 + 1, max(1, (y1 - y0) // 8)):
+                        self.assertEqual(mask[py][px][0], 0, f"{name} panel tinted at {px},{py}")
+                        self.assertEqual(color[py][px][3], 255, f"{name} panel transparent at {px},{py}")
+                        self.assertGreater(sum(color[py][px][:3]), 550, f"{name} panel not light at {px},{py}")
+
+    def test_comp_classes_exist_in_source(self):
+        sources = "\n".join(source_text().values())
+        for d in all_thing_defs():
+            for li in d.findall("comps/li"):
+                cls = li.get("Class") or ""
+                if cls.startswith("SimpleSigh."):
+                    namespace, _, name = cls.rpartition(".")
+                    self.assertIn(f"namespace {namespace};", sources)
+                    self.assertIn(f"class {name}", sources)
+
+    def test_keyed_strings_used_in_source_exist(self):
+        import re
+        used = set()
+        for text in source_text().values():
+            used.update(re.findall(r'"(SimpleSigh_[A-Za-z0-9_]+)"', text))
+        def_names = {d.findtext("defName") for d in all_thing_defs()}
+        used -= def_names
+        self.assertTrue(used, "no keyed strings found in Source")
+        for language in ("English", "Japanese"):
+            missing = used - set(keyed(language))
+            self.assertEqual(missing, set(), language)
+
+
 REFERENCE_DIR = os.environ.get("RIMWORLD_REFERENCE_DIR")
 
 

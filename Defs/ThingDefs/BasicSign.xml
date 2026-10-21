@@ -45,6 +45,14 @@
       <Mass>4</Mass>
     </statBases>
     <uiOrder>2950</uiOrder>
+    <comps>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>64</maxElements>
+        <multiline>false</multiline>
+        <!-- Matches the untinted panel drawn by tools/textures/generate_textures.py -->
+        <panelRect>(0.1406,0.3906,0.7188,0.4375)</panelRect>
+      </li>
+    </comps>
   </ThingDef>
 
 </Defs>

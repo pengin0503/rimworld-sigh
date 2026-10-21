@@ -4,4 +4,14 @@
   <SimpleSigh_InvalidText>この文字列は看板に使用できません。</SimpleSigh_InvalidText>
   <SimpleSigh_TooLong>文字数が上限を超えています（{0} / {1} 文字）。</SimpleSigh_TooLong>
   <SimpleSigh_NewlineNotAllowed>この看板では改行を使用できません。</SimpleSigh_NewlineNotAllowed>
+  <SimpleSigh_EditTextDesc>この看板に表示する文字・色・大きさを変更します。</SimpleSigh_EditTextDesc>
+  <SimpleSigh_EditTitle>{0}を編集</SimpleSigh_EditTitle>
+  <SimpleSigh_TextColor>文字の色</SimpleSigh_TextColor>
+  <SimpleSigh_TextSize>文字の大きさ: {0}%</SimpleSigh_TextSize>
+  <SimpleSigh_CopyText>文字をコピー</SimpleSigh_CopyText>
+  <SimpleSigh_CopyTextDesc>この看板の文字・色・大きさをコピーし、別の看板に貼り付けられるようにします。</SimpleSigh_CopyTextDesc>
+  <SimpleSigh_PasteText>文字を貼り付け</SimpleSigh_PasteText>
+  <SimpleSigh_PasteTextDesc>この看板の文字・色・大きさを、コピーした内容に置き換えます。</SimpleSigh_PasteTextDesc>
+  <SimpleSigh_Copied>看板の文字をコピーしました。</SimpleSigh_Copied>
+  <SimpleSigh_NoText>まだ文字がありません。「文字を編集」で書き込めます。</SimpleSigh_NoText>
 </LanguageData>
