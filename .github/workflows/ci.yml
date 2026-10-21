@@ -1,0 +1,53 @@
+name: Simple Sigh CI
+
+# Game reference assemblies are intentionally not committed or fetched from
+# untrusted mirrors. Full 1.7 build/smoke checks remain local until a lawful,
+# private reference delivery mechanism or self-hosted runner is configured.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: simple-sigh-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  structure:
+    name: XML and structure tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Run XML and structure tests
+        run: python -m unittest discover -s Tests/StructureTests -v
+      - name: Explain reference-only checks
+        run: |
+          echo 'Note: RimWorld Core cross-reference tests are skipped without RIMWORLD_REFERENCE_DIR.'
+          echo 'These checks do not build the mod or execute RimWorld.'
+
+  unit-tests:
+    name: .NET 10 text and layout tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run xUnit tests (no game DLLs required)
+        run: dotnet test Tests/SimpleSigh.Text.Tests/SimpleSigh.Text.Tests.csproj --configuration Release --nologo --verbosity normal
