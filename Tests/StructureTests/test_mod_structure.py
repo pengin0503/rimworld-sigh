@@ -208,6 +208,35 @@ class NoticeBoardTests(unittest.TestCase):
         self.assertEqual(east[1], 2 * east[0])
 
 
+class ElectronicSignTests(unittest.TestCase):
+    def setUp(self):
+        self.sign = thing_def("SimpleSigh_ElectronicSign")
+
+    def comp(self, cls):
+        return comp_props(self.sign, cls)
+
+    def test_is_metal_2x1_with_components(self):
+        self.assertEqual({li.text for li in self.sign.find("stuffCategories")}, {"Metallic"})
+        self.assertEqual(self.sign.findtext("size"), "(2,1)")
+        self.assertEqual(self.sign.findtext("costList/ComponentIndustrial"), "2")
+        self.assertEqual([li.text for li in self.sign.find("researchPrerequisites")], ["Electricity"])
+
+    def test_needs_power_and_can_be_switched(self):
+        power = self.comp("CompProperties_Power")
+        self.assertEqual(power.findtext("compClass"), "CompPowerTrader")
+        self.assertGreater(float(power.findtext("basePowerConsumption")), 0)
+        self.comp("CompProperties_Flickable")
+        glower = self.comp("CompProperties_Glower")
+        self.assertGreater(float(glower.findtext("glowRadius")), 0)
+
+    def test_text_is_power_gated_led(self):
+        props = self.comp(SignCompTests.PROPS)
+        for field in ("requiresPower", "glowsInDark", "syncGlowColor", "multiline"):
+            self.assertEqual(props.findtext(field), "true", field)
+        self.assertEqual(props.findtext("maxElements"), "256")
+        self.assertTrue(props.findtext("defaultColor"))
+
+
 class LanguageTests(unittest.TestCase):
     REQUIRED = {"SimpleSigh_EditText", "SimpleSigh_InvalidText"}
 
@@ -404,7 +433,36 @@ class SignCompTests(unittest.TestCase):
                     for py in range(y0, y1 + 1, max(1, (y1 - y0) // 8)):
                         self.assertEqual(mask[py][px][0], 0, f"{name} panel tinted at {px},{py}")
                         self.assertEqual(color[py][px][3], 255, f"{name} panel transparent at {px},{py}")
-                        self.assertGreater(sum(color[py][px][:3]), 550, f"{name} panel not light at {px},{py}")
+                        if props[0].findtext("glowsInDark") == "true":
+                            self.assertLess(sum(color[py][px][:3]), 150, f"{name} LED panel not dark at {px},{py}")
+                        else:
+                            self.assertGreater(sum(color[py][px][:3]), 550, f"{name} panel not light at {px},{py}")
+
+    def test_default_text_colour_contrasts_with_panel(self):
+        """WCAG-style contrast >= 4.5 between the default text colour and the average panel colour."""
+        def luminance(rgb):
+            def channel(c):
+                return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+            r, g, b = (channel(v) for v in rgb)
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+        for sign in self.sign_defs():
+            props = comp_props(sign, self.PROPS)
+            default = props.findtext("defaultColor") or "(0.13,0.11,0.09)"
+            values = [float(v) for v in default.strip("()").replace("RGBA", "").split(",")]
+            if max(values[:3]) > 1:
+                values = [v / 255 for v in values]
+            graphic = sign.find("graphicData")
+            multi = graphic.findtext("graphicClass") == "Graphic_Multi"
+            name = graphic.findtext("texPath") + ("_north" if multi else "")
+            x, y, w, h = parse_rect(props.findtext("panelRect"))
+            width, height, pixels = read_png(path("Textures", name + ".png"))
+            samples = [pixels[py][px] for py in range(round((1 - y - h) * height) + 4, round((1 - y) * height) - 4, 3)
+                       for px in range(round(x * width) + 4, round((x + w) * width) - 4, 3)]
+            panel = [sum(p[i] for p in samples) / len(samples) / 255 for i in range(3)]
+            light, dark = sorted((luminance(panel), luminance(values[:3])), reverse=True)
+            ratio = (light + 0.05) / (dark + 0.05)
+            self.assertGreaterEqual(ratio, 4.5, f"{sign.findtext('defName')}: contrast {ratio:.2f}")
 
     def test_comp_classes_exist_in_source(self):
         sources = "\n".join(source_text().values())
@@ -480,6 +538,8 @@ class CoreReferenceTests(unittest.TestCase):
                     self.assert_core(def_type, value)
             for li in d.findall("researchPrerequisites/li"):
                 self.assert_core("ResearchProjectDef", li.text)
+            for item in d.findall("costList/*"):
+                self.assert_core("ThingDef", item.tag)
 
 
 class PackagingTests(unittest.TestCase):

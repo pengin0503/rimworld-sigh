@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!--
+    2x1 powered LED sign. Text is shown in the chosen colour only while powered and is kept across
+    power cuts. It is drawn after the light overlay (render queue 3150, like vanilla TransparentPostLight),
+    so it stays bright at night. A small vanilla CompGlower follows power and the text colour.
+  -->
+  <ThingDef ParentName="SimpleSigh_SignBase">
+    <defName>SimpleSigh_ElectronicSign</defName>
+    <label>electronic sign</label>
+    <description>A powered LED board for multi-line messages. The text lights up in the chosen colour while the board has power and goes dark during a power cut; the message is kept and returns with the power. Select it and use "Edit text".</description>
+    <graphicData>
+      <texPath>Things/Building/SimpleElectronicSign</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(2,1)</drawSize>
+      <damageData>
+        <rect>(0.05,0.25,1.9,0.7)</rect>
+      </damageData>
+    </graphicData>
+    <size>(2,1)</size>
+    <rotatable>true</rotatable>
+    <defaultPlacingRot>North</defaultPlacingRot>
+    <stuffCategories Inherit="False">
+      <li>Metallic</li>
+    </stuffCategories>
+    <costStuffCount>40</costStuffCount>
+    <costList>
+      <ComponentIndustrial>2</ComponentIndustrial>
+    </costList>
+    <researchPrerequisites>
+      <li>Electricity</li>
+    </researchPrerequisites>
+    <statBases>
+      <MaxHitPoints>100</MaxHitPoints>
+      <WorkToBuild>1500</WorkToBuild>
+      <Mass>10</Mass>
+      <Flammability>0.5</Flammability>
+    </statBases>
+    <uiOrder>2953</uiOrder>
+    <comps>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>40</basePowerConsumption>
+      </li>
+      <li Class="CompProperties_Flickable" />
+      <li Class="CompProperties_Glower">
+        <glowRadius>2.5</glowRadius>
+        <glowColor>(255,170,60,0)</glowColor>
+      </li>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>256</maxElements>
+        <multiline>true</multiline>
+        <requiresPower>true</requiresPower>
+        <glowsInDark>true</glowsInDark>
+        <syncGlowColor>true</syncGlowColor>
+        <defaultColor>(1,0.67,0.24)</defaultColor>
+        <!-- Match the untinted screens drawn by tools/textures/generate_textures.py -->
+        <panelRect>(0.0703,0.2969,0.8594,0.5625)</panelRect>
+        <panelRectHorizontal>(0.1406,0.1641,0.7188,0.7578)</panelRectHorizontal>
+        <panelPadding>0.06</panelPadding>
+      </li>
+    </comps>
+  </ThingDef>
+
+</Defs>

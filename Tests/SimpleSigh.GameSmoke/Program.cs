@@ -71,6 +71,23 @@ public static class Program
                     RequireFields(def, typeof(ThingDef), name);
                     if (def["graphicData"] != null) RequireFields(def["graphicData"], typeof(GraphicData), name + ".graphicData");
                     if (def["building"] != null) RequireFields(def["building"], typeof(RimWorld.BuildingProperties), name + ".building");
+                    foreach (XmlElement li in def["comps"]?.ChildNodes.OfType<XmlElement>() ?? Enumerable.Empty<XmlElement>())
+                    {
+                        string cls = li.GetAttribute("Class");
+                        if (string.IsNullOrEmpty(cls) || cls.StartsWith("SimpleSigh."))
+                        {
+                            continue;
+                        }
+                        Type props = typeof(ThingDef).Assembly.GetType("RimWorld." + cls) ?? typeof(ThingDef).Assembly.GetType("Verse." + cls);
+                        Require(props != null && typeof(CompProperties).IsAssignableFrom(props), $"comp {cls} not found in 1.7");
+                        RequireFields(li, props, name + "." + cls);
+                        XmlElement compClass = li["compClass"];
+                        if (compClass != null)
+                        {
+                            Type comp = typeof(ThingDef).Assembly.GetType("RimWorld." + compClass.InnerText) ?? typeof(ThingDef).Assembly.GetType("Verse." + compClass.InnerText);
+                            Require(comp != null && typeof(ThingComp).IsAssignableFrom(comp), $"compClass {compClass.InnerText} not found in 1.7");
+                        }
+                    }
                     foreach (XmlElement li in def["placeWorkers"]?.ChildNodes.OfType<XmlElement>() ?? Enumerable.Empty<XmlElement>())
                     {
                         Type worker = typeof(ThingDef).Assembly.GetType("RimWorld." + li.InnerText) ?? typeof(ThingDef).Assembly.GetType("Verse." + li.InnerText);
@@ -130,12 +147,19 @@ public static class Program
         return failures == 0 ? 0 : 1;
     }
 
-    /// <summary>DirectXmlToObject maps child elements to public instance fields; unknown names are load errors in game.</summary>
+    /// <summary>
+    /// The 1.7 XML loader binds child elements to instance fields, public or not
+    /// (DirectXmlSaveLoadUtility.FieldGetFlags); unknown names are load errors in game.
+    /// </summary>
     private static void RequireFields(XmlElement node, Type type, string context)
     {
         foreach (XmlElement child in node.ChildNodes.OfType<XmlElement>())
         {
-            FieldInfo field = type.GetField(child.Name, BindingFlags.Public | BindingFlags.Instance);
+            FieldInfo field = null;
+            for (Type t = type; t != null && field == null; t = t.BaseType)
+            {
+                field = t.GetField(child.Name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+            }
             Require(field != null, $"{context}: {type.Name} has no field '{child.Name}'");
         }
     }
@@ -153,6 +177,15 @@ public static class Program
             Require(parts.Length == 4, $"Rect needs 4 values: {text}");
             return new UnityEngine.Rect(Convert.ToSingle(parts[0], culture), Convert.ToSingle(parts[1], culture),
                 Convert.ToSingle(parts[2], culture), Convert.ToSingle(parts[3], culture));
+        }
+        if (type == typeof(UnityEngine.Color))
+        {
+            // 1.7 ParseColor: "(r,g,b[,a])", floats 0..1 (byte values > 1 are also accepted by the game).
+            string[] parts = text.TrimStart('(', 'R', 'G', 'B', 'A').TrimEnd(')').Split(',');
+            Require(parts.Length == 3 || parts.Length == 4, $"Color needs 3 or 4 values: {text}");
+            float[] v = parts.Select(p => Convert.ToSingle(p, culture)).ToArray();
+            Require(v.All(x => x >= 0f && x <= 1f), $"use 0..1 floats for colours: {text}");
+            return new UnityEngine.Color(v[0], v[1], v[2], v.Length == 4 ? v[3] : 1f);
         }
         throw new InvalidOperationException($"smoke parser does not cover {type.Name}");
     }

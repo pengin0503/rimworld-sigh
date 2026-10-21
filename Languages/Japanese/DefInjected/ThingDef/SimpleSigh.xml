@@ -6,4 +6,6 @@
   <SimpleSigh_WallSign.description>壁に取り付ける看板。壁の隣に、壁の方向を向けて設置します。選択して「文字を編集」から短いメッセージを書き込めます。</SimpleSigh_WallSign.description>
   <SimpleSigh_NoticeBoard.label>掲示板</SimpleSigh_NoticeBoard.label>
   <SimpleSigh_NoticeBoard.description>長めのお知らせを書ける大型の立て掲示板。複数行に対応し、長い行は折り返され、掲示板に収まるよう縮小されます。選択して「文字を編集」から書き込めます。</SimpleSigh_NoticeBoard.description>
+  <SimpleSigh_ElectronicSign.label>電光掲示板</SimpleSigh_ElectronicSign.label>
+  <SimpleSigh_ElectronicSign.description>複数行のメッセージを表示できる電力式のLED掲示板。電力がある間は選んだ色で文字が光り、停電中は消灯します。メッセージは保持され、復電すると再び表示されます。選択して「文字を編集」から書き込めます。</SimpleSigh_ElectronicSign.description>
 </LanguageData>

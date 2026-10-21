@@ -42,12 +42,18 @@ CASES = [
     {"def": "SimpleSigh_NoticeBoard", "rotation": 2, "text": "倉庫\n備品"},
     {"def": "SimpleSigh_NoticeBoard", "rotation": 3, "text": NOTICE},
     {"def": "SimpleSigh_NoticeBoard", "rotation": 0, "text": NOTICE, "scale": 0.5},
+    {"def": "SimpleSigh_ElectronicSign", "rotation": 0, "text": "発電所 稼働中\nPOWER 24h"},
+    {"def": "SimpleSigh_ElectronicSign", "rotation": 1, "text": "発電所 稼働中\nPOWER 24h"},
+    {"def": "SimpleSigh_ElectronicSign", "rotation": 0, "text": "停電中は消灯（文字は保持）", "color": (90, 230, 120)},
+    {"def": "SimpleSigh_ElectronicSign", "rotation": 0, "text": "(power off: text hidden)", "unpowered": True},
 ]
 GRAPHICS = {
     "SimpleSigh_BasicSign": {"tex": "SimpleSign", "multi": False, "size": (1, 1), "footprint": (1, 1), "offsets": None},
     "SimpleSigh_WallSign": {"tex": "SimpleWallSign", "multi": False, "size": (1, 1), "footprint": (1, 1),
                             "offsets": [(0, 0.9), (0.9, 0), (0, -0.9), (-0.9, 0)]},
     "SimpleSigh_NoticeBoard": {"tex": "SimpleNoticeBoard", "multi": True, "size": (2, 1), "footprint": (2, 1), "offsets": None},
+    "SimpleSigh_ElectronicSign": {"tex": "SimpleElectronicSign", "multi": True, "size": (2, 1), "footprint": (2, 1), "offsets": None,
+                                  "metal": True, "text": (255, 171, 61)},
 }
 
 
@@ -95,7 +101,7 @@ def draw_case(case, result, font):
         wx, wy = to_px(dx - 0.5, dz + 0.5)
         draw.rectangle([wx, wy, wx + PX - 1, wy + PX - 1], fill=(120, 116, 110), outline=(60, 58, 55))
 
-    color = STEEL if rot % 2 else WOOD
+    color = STEEL if rot % 2 or g.get("metal") else WOOD
     if g["multi"]:
         name = g["tex"] + ("_east" if rot in (1, 3) else "_north")
         sprite = tinted(name, name + "m", color)
@@ -115,7 +121,8 @@ def draw_case(case, result, font):
     px1, py1 = to_px(p["x"] + p["w"] / 2, p["z"] - p["h"] / 2)
     draw.rectangle([px0, py0, px1, py1], outline=(220, 40, 40))
 
-    for q in result["quads"]:
+    text_color = case.get("color") or g.get("text") or TEXT
+    for q in ([] if case.get("unpowered") else result["quads"]):
         x0, y0 = to_px(q["x0"], q["z1"])
         x1, y1 = to_px(q["x1"], q["z0"])
         w, h = max(1, int(round(x1 - x0))), max(1, int(round(y1 - y0)))
@@ -123,7 +130,7 @@ def draw_case(case, result, font):
         glyph = Image.new("L", (bx1 - bx0, by1 - by0), 0)
         ImageDraw.Draw(glyph).text((-bx0, -by0), q["ch"], font=font, fill=255, anchor="la")
         glyph = glyph.resize((w, h), Image.LANCZOS)
-        ink = Image.new("RGBA", (w, h), TEXT + (255,))
+        ink = Image.new("RGBA", (w, h), tuple(text_color) + (255,))
         tile.paste(ink, (int(round(x0)), int(round(y0))), glyph)
 
     label = f'{case["def"].replace("SimpleSigh_", "")} rot={"NESW"[rot]}' + (f' size={int(case.get("scale", 1) * 100)}%')

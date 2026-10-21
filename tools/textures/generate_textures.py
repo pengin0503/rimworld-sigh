@@ -107,6 +107,25 @@ def post(tex, mask, x0, y0, x1, y1):
     mask.rect(x0 + 3, y0, x1 - 3, y1 - 3, TINT)
 
 
+SCREEN = (16, 18, 20, 255)
+SCREEN_DOT = (34, 38, 42, 255)
+LED_GREEN = (70, 220, 90, 255)
+
+
+def led_board(tex, mask, x0, y0, x1, y1, border, panel_inset):
+    """Metal-framed LED panel: tinted frame, dark untinted screen with a faint dot matrix."""
+    px0, py0, px1, py1 = board(tex, mask, x0, y0, x1, y1, border, panel_inset)
+    tex.rect(px0, py0, px1, py1, SCREEN)
+    for dy in range(py0 + 2, py1 - 1, 4):
+        for dx in range(px0 + 2, px1 - 1, 4):
+            tex.rect(dx, dy, dx + 2, dy + 2, SCREEN_DOT)
+    # Status LED on the frame, bottom right, kept untinted.
+    lx, ly = x1 - border - 12, y1 - border - 8
+    tex.rect(lx, ly, lx + 5, ly + 4, LED_GREEN)
+    mask.rect(lx, ly, lx + 5, ly + 4, NO_TINT)
+    return px0, py0, px1, py1
+
+
 def normalized(panel, width, height):
     """Convert a top-left pixel rect to RimWorld-style (x, y, w, h) from the bottom-left."""
     x0, y0, x1, y1 = panel
@@ -150,6 +169,18 @@ def notice_board_portrait(tex, mask):
     return board(tex, mask, 6, 8, 122, 226, 3, 12)
 
 
+def electronic_landscape(tex, mask):
+    post(tex, mask, 34, 92, 50, 126)
+    post(tex, mask, 206, 92, 222, 126)
+    return led_board(tex, mask, 6, 6, 250, 102, 3, 12)
+
+
+def electronic_portrait(tex, mask):
+    post(tex, mask, 22, 216, 38, 254)
+    post(tex, mask, 90, 216, 106, 254)
+    return led_board(tex, mask, 6, 8, 122, 226, 3, 12)
+
+
 def main():
     rects = {
         "SimpleSign": make("SimpleSign", 128, 128, basic_sign),
@@ -160,6 +191,8 @@ def main():
     east = make("SimpleNoticeBoard_east", 128, 256, notice_board_portrait, "m")
     rects["SimpleNoticeBoard (north/south)"] = north
     rects["SimpleNoticeBoard (east/west)"] = east
+    rects["SimpleElectronicSign (north/south)"] = make("SimpleElectronicSign_north", 256, 128, electronic_landscape, "m")
+    rects["SimpleElectronicSign (east/west)"] = make("SimpleElectronicSign_east", 128, 256, electronic_portrait, "m")
     for key, value in rects.items():
         print(f"{key}: panelRect=({value[0]},{value[1]},{value[2]},{value[3]})")
 
