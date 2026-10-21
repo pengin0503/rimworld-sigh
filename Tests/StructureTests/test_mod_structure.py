@@ -151,6 +151,37 @@ class DefTests(unittest.TestCase):
                 self.assertGreater(height, 0)
 
 
+class WallSignTests(unittest.TestCase):
+    """Follows vanilla 1.7 wall attachments (WallLamp / TorchWallLamp in Buildings_Furniture.xml)."""
+
+    def setUp(self):
+        self.sign = thing_def("SimpleSigh_WallSign")
+
+    def test_is_stuffable_single_line_1x1(self):
+        cats = {li.text for li in self.sign.find("stuffCategories")}
+        self.assertTrue(STUFF_CATEGORIES.issubset(cats))
+        self.assertIn(self.sign.findtext("size"), (None, "(1,1)"))
+        props = comp_props(self.sign, SignCompTests.PROPS)
+        self.assertEqual(props.findtext("maxElements"), "64")
+        self.assertEqual(props.findtext("multiline"), "false")
+
+    def test_mounts_on_walls_like_vanilla_attachments(self):
+        self.assertEqual(self.sign.findtext("rotatable"), "true")
+        self.assertEqual(self.sign.findtext("building/isAttachment"), "true")
+        self.assertEqual(self.sign.findtext("building/isEdifice"), "false")
+        self.assertEqual([li.text for li in self.sign.find("placeWorkers")], ["Placeworker_AttachedToWall"])
+        self.assertEqual(self.sign.find("terrainAffordanceNeeded").get("IsNull"), "True")
+        self.assertEqual(self.sign.findtext("passability"), "Standable")
+        self.assertEqual(self.sign.findtext("altitudeLayer"), "BuildingOnTop")
+
+    def test_graphic_is_drawn_upright_on_the_wall_for_every_rotation(self):
+        graphic = self.sign.find("graphicData")
+        self.assertEqual(graphic.findtext("drawRotated"), "false")
+        expected = {"North": "(0,0,0.9)", "South": "(0,0,-0.9)", "East": "(0.9,0,0)", "West": "(-0.9,0,0)"}
+        for rot, offset in expected.items():
+            self.assertEqual(graphic.findtext(f"drawOffset{rot}"), offset, rot)
+
+
 class LanguageTests(unittest.TestCase):
     REQUIRED = {"SimpleSigh_EditText", "SimpleSigh_InvalidText"}
 
@@ -160,6 +191,18 @@ class LanguageTests(unittest.TestCase):
             self.assertTrue(self.REQUIRED.issubset(keys), (language, self.REQUIRED - set(keys)))
             for key, value in keys.items():
                 self.assertTrue(value.strip(), (language, key))
+
+    def test_every_def_has_japanese_label_and_description(self):
+        root = parse("Languages", "Japanese", "DefInjected", "ThingDef", "SimpleSigh.xml")
+        injected = {child.tag: (child.text or "").strip() for child in root}
+        for d in all_thing_defs():
+            name = d.findtext("defName")
+            if not name:
+                continue
+            self.assertTrue(d.findtext("label"), name)
+            self.assertTrue(d.findtext("description"), name)
+            self.assertTrue(injected.get(f"{name}.label"), f"{name}.label")
+            self.assertTrue(injected.get(f"{name}.description"), f"{name}.description")
 
     def test_languages_have_identical_key_sets(self):
         self.assertEqual(set(keyed("English")), set(keyed("Japanese")))

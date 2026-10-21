@@ -59,6 +59,27 @@ public static class Program
             }
         }
 
+        foreach (string file in Directory.GetFiles(Path.Combine(repo, "Defs"), "*.xml", SearchOption.AllDirectories))
+        {
+            var doc = new XmlDocument();
+            doc.Load(file);
+            foreach (XmlElement def in doc.DocumentElement.ChildNodes.OfType<XmlElement>().Where(e => e.Name == "ThingDef"))
+            {
+                string name = def["defName"]?.InnerText ?? def.GetAttribute("Name");
+                Check($"{Path.GetFileName(file)} {name}: every XML field exists in the 1.7 Def classes", () =>
+                {
+                    RequireFields(def, typeof(ThingDef), name);
+                    if (def["graphicData"] != null) RequireFields(def["graphicData"], typeof(GraphicData), name + ".graphicData");
+                    if (def["building"] != null) RequireFields(def["building"], typeof(RimWorld.BuildingProperties), name + ".building");
+                    foreach (XmlElement li in def["placeWorkers"]?.ChildNodes.OfType<XmlElement>() ?? Enumerable.Empty<XmlElement>())
+                    {
+                        Type worker = typeof(ThingDef).Assembly.GetType("RimWorld." + li.InnerText) ?? typeof(ThingDef).Assembly.GetType("Verse." + li.InnerText);
+                        Require(worker != null && typeof(PlaceWorker).IsAssignableFrom(worker), $"placeWorker {li.InnerText} not found in 1.7");
+                    }
+                });
+            }
+        }
+
         Check("CompSignText.PostExposeData writes through the real 1.7 ScribeSaver", () =>
         {
             const string text = "研究室 C:\\new\n2行目  ";
@@ -84,6 +105,16 @@ public static class Program
 
         Console.WriteLine(failures == 0 ? "SMOKE PASS (assembly/XML only; the game was not run)" : $"SMOKE FAIL ({failures})");
         return failures == 0 ? 0 : 1;
+    }
+
+    /// <summary>DirectXmlToObject maps child elements to public instance fields; unknown names are load errors in game.</summary>
+    private static void RequireFields(XmlElement node, Type type, string context)
+    {
+        foreach (XmlElement child in node.ChildNodes.OfType<XmlElement>())
+        {
+            FieldInfo field = type.GetField(child.Name, BindingFlags.Public | BindingFlags.Instance);
+            Require(field != null, $"{context}: {type.Name} has no field '{child.Name}'");
+        }
     }
 
     /// <summary>Subset of 1.7 ParseHelper used by our comp: int, float, bool, and FromStringRect "(x,y,w,h)".</summary>

@@ -2,4 +2,6 @@
 <LanguageData>
   <SimpleSigh_BasicSign.label>看板</SimpleSigh_BasicSign.label>
   <SimpleSigh_BasicSign.description>無地の表示面を持つ小さな立て看板。選択して「文字を編集」から短いメッセージを書き込めます。</SimpleSigh_BasicSign.description>
+  <SimpleSigh_WallSign.label>壁掛け看板</SimpleSigh_WallSign.label>
+  <SimpleSigh_WallSign.description>壁に取り付ける看板。壁の隣に、壁の方向を向けて設置します。選択して「文字を編集」から短いメッセージを書き込めます。</SimpleSigh_WallSign.description>
 </LanguageData>

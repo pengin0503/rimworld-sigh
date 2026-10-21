@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!--
+    Wall-mounted sign. Placement follows the vanilla 1.7 wall attachments (WallLamp, TorchWallLamp):
+    the building stands in the cell next to a wall, faces it (rotation points at the wall) and its
+    graphic is drawn 0.9 cells towards the wall. The same upright plaque is used for every rotation
+    so the text is always readable.
+  -->
+  <ThingDef ParentName="SimpleSigh_SignBase">
+    <defName>SimpleSigh_WallSign</defName>
+    <label>wall sign</label>
+    <description>A plaque mounted on a wall. Place it next to a wall, facing the wall. Select it and use "Edit text" to write a short message on the panel.</description>
+    <graphicData>
+      <texPath>Things/Building/SimpleWallSign</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(1,1)</drawSize>
+      <drawRotated>false</drawRotated>
+      <drawOffsetNorth>(0,0,0.9)</drawOffsetNorth>
+      <drawOffsetSouth>(0,0,-0.9)</drawOffsetSouth>
+      <drawOffsetEast>(0.9,0,0)</drawOffsetEast>
+      <drawOffsetWest>(-0.9,0,0)</drawOffsetWest>
+      <damageData>
+        <enabled>false</enabled>
+      </damageData>
+    </graphicData>
+    <altitudeLayer>BuildingOnTop</altitudeLayer>
+    <passability>Standable</passability>
+    <pathCost>0</pathCost>
+    <fillPercent>0</fillPercent>
+    <terrainAffordanceNeeded IsNull="True" />
+    <size>(1,1)</size>
+    <rotatable>true</rotatable>
+    <defaultPlacingRot>North</defaultPlacingRot>
+    <overrideMinifiedRot>North</overrideMinifiedRot>
+    <minifiedDrawOffset>(0, 0, 0.2)</minifiedDrawOffset>
+    <costStuffCount>20</costStuffCount>
+    <statBases>
+      <MaxHitPoints>50</MaxHitPoints>
+      <WorkToBuild>400</WorkToBuild>
+      <Mass>2</Mass>
+    </statBases>
+    <building>
+      <isEdifice>false</isEdifice>
+      <isAttachment>true</isAttachment>
+    </building>
+    <placeWorkers>
+      <li>Placeworker_AttachedToWall</li>
+    </placeWorkers>
+    <uiOrder>2951</uiOrder>
+    <comps>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>64</maxElements>
+        <multiline>false</multiline>
+        <!-- Matches the untinted panel drawn by tools/textures/generate_textures.py -->
+        <panelRect>(0.125,0.25,0.75,0.4688)</panelRect>
+      </li>
+    </comps>
+  </ThingDef>
+
+</Defs>
