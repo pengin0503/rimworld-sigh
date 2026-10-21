@@ -50,11 +50,23 @@ public sealed class SignRenderSlot<TKey, TValue> where TValue : class
 
     public bool HasValue => value != null;
 
+    /// <summary>Allocation-free hit path for the per-frame draw: true when <paramref name="currentKey"/> is already built.</summary>
+    public bool TryGet(TKey currentKey, out TValue current)
+    {
+        if (hasKey && EqualityComparer<TKey>.Default.Equals(key, currentKey))
+        {
+            current = value;
+            return true;
+        }
+        current = null;
+        return false;
+    }
+
     public TValue Get(TKey newKey, Func<TKey, TValue> build)
     {
-        if (hasKey && EqualityComparer<TKey>.Default.Equals(key, newKey))
+        if (TryGet(newKey, out TValue current))
         {
-            return value;
+            return current;
         }
         Release();
         value = build(newKey);

@@ -31,7 +31,13 @@ public sealed class SignRenderCache
 
     public BuiltText Get(CompSignText sign, TmpGlyphSource glyphs)
     {
-        BuiltText built = slot.Get(KeyFor(sign, glyphs), _ =>
+        SignRenderKey key = KeyFor(sign, glyphs);
+        if (slot.TryGet(key, out BuiltText cached))
+        {
+            return cached;
+        }
+        // Rebuild path only: the closure below is allocated once per visible change, not per frame.
+        BuiltText built = slot.Get(key, _ =>
         {
             MissingGlyphs = GlyphQuadBuilder.HasMissingGlyphs(sign.Text, glyphs);
             return SignTextRenderer.TryBuild(sign, glyphs, out Mesh mesh, out Material material, out Vector3 center)

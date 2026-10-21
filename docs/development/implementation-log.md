@@ -44,3 +44,7 @@ Nothing in this log claims in-game success; in-game checks are `NOT RUN` unless 
 | D25 | Optional `maxScale` (user size) and `wrap` (only multiline signs wrap) parameters on `Fit` | Shrinking after wrapping would leave short lines; spec keeps 1×1/wall signs single-line | none (optional params) |
 | D26 | Fit tolerance is relative 1e-6 | An absolute 1e-4 let a slightly-too-large scale pass (found by test: 0.50005 instead of 0.5) | none |
 | D27 | Notice board = `Graphic_Multi` with landscape north and portrait east art; text panel per orientation (`panelRect` / `panelRectHorizontal`), west mirrors east | 1.7 `Graphic_Multi.ShouldDrawRotated` is false when east differs from north, and `Graphic.MeshAt` then swaps the draw size; text stays upright | portrait art on E/W instead of a rotated board |
+| D28 | `SignTextLayout.Build` holds all placement maths; `SignTextRenderer` only builds the mesh | One implementation for game, tests and offline preview | none |
+| D29 | User size = fraction of the largest fitting size (two-pass fit) | Plain cap left a dead zone on the slider for long text (test failure) | none |
+| D30 | Allocation-free cache hit path (`TryGet`) | Capturing lambda allocated per sign per frame; spec lists continuous GC as a release blocker | none |
+| D31 | Offline preview tool (`tools/preview`) | Visual check of panel placement per def/rotation without the game; output clearly labelled offline | none |

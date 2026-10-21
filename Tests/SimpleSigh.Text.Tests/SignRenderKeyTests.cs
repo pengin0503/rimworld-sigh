@@ -40,4 +40,25 @@ public class SignRenderKeyTests
         };
         Assert.NotEqual(Key(), changed);
     }
+
+    [Fact]
+    public void BuildingAndComparingKeysDoesNotAllocate()
+    {
+        var stats = new RenderCacheStats();
+        var slot = new SignRenderSlot<SignRenderKey, object>(_ => { }, stats);
+        string text = "研究室";
+        slot.Get(Key(text), _ => new object());
+        void Frame()
+        {
+            int layout = System.HashCode.Combine(0.1f, 0.2f, 0.08f, 1f, 0.9f);
+            Assert.True(slot.TryGet(new SignRenderKey(text, 0x221C17FF, 1f, 0, 1, 2, layout - layout), out _));
+        }
+        Frame(); // first use initialises statics (HashCode seed, JIT); measure the steady state
+        long before = System.GC.GetAllocatedBytesForCurrentThread();
+        for (int frame = 0; frame < 10_000; frame++)
+        {
+            Frame();
+        }
+        Assert.Equal(0, System.GC.GetAllocatedBytesForCurrentThread() - before);
+    }
 }

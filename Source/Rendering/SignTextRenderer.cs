@@ -7,17 +7,14 @@ using Verse;
 namespace SimpleSigh.Rendering;
 
 /// <summary>
-/// Builds the text mesh for one sign: glyph quads laid out inside the sign's display panel,
-/// in the map's XZ plane, textured from the game font atlas with the 1.7 "WorldText" shader.
+/// Builds the text mesh for one sign from <see cref="SignTextLayout"/> (glyph quads inside the sign's
+/// display panel), in the map's XZ plane, textured from the game font atlas with the 1.7 "WorldText" shader.
 /// Building is only done when something visible changed; drawing a built mesh is one DrawMesh.
 /// </summary>
 public static class SignTextRenderer
 {
     /// <summary>After the sign sprite (Cutout 2900), before LightOverlay (3100) and FogOfWar (3175).</summary>
     public const int RenderQueue = 3000;
-
-    /// <summary>Smallest fit scale; below this the layout reports it cannot fit and clips.</summary>
-    public const float MinFitScale = 0.05f;
 
     private static Shader textShader;
 
@@ -48,23 +45,9 @@ public static class SignTextRenderer
         }
 
         PanelPlacement panel = PanelFor(sign, sign.parent.Rotation);
-        float padding = sign.Props.panelPadding * Mathf.Min(panel.Width, panel.Height);
-        float innerWidth = panel.Width - padding * 2f;
-        float innerHeight = panel.Height - padding * 2f;
-        if (innerWidth <= 0f || innerHeight <= 0f)
-        {
-            return false;
-        }
-
-        float pixelsToWorld = innerHeight / glyphs.LineHeight;
-        // The user's size caps the fit before wrapping, so smaller text also gets longer lines.
-        SignLayoutResult layout = SignLayout.Fit(sign.Text, innerWidth, innerHeight,
-            s => GlyphQuadBuilder.MeasureLine(s, glyphs) * pixelsToWorld, innerHeight, MinFitScale,
-            maxScale: sign.Scale, wrap: sign.Props.multiline);
-        float lineHeight = innerHeight * layout.Scale;
-        List<GlyphQuad> quads = GlyphQuadBuilder.ClipTo(
-            GlyphQuadBuilder.Build(layout.Lines, glyphs, lineHeight), innerWidth * 0.5f, innerHeight * 0.5f);
-        if (quads.Count == 0)
+        CompProperties_SignText props = sign.Props;
+        SignTextLayout.Result layout = SignTextLayout.Build(sign.Text, panel, props.panelPadding, props.multiline, sign.Scale, glyphs);
+        if (layout.Quads.Count == 0)
         {
             return false;
         }
@@ -75,9 +58,9 @@ public static class SignTextRenderer
             return false;
         }
 
-        mesh = ToMesh(quads);
+        mesh = ToMesh(layout.Quads);
         material = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, sign.TextColor) { renderQueue = RenderQueue });
-        localCenter = new Vector3(panel.CenterX, 0f, panel.CenterZ);
+        localCenter = new Vector3(layout.CenterX, 0f, layout.CenterZ);
         return true;
     }
 

@@ -101,4 +101,28 @@ public class SignRenderSlotTests
         slot.Release();
         Assert.False(slot.HasValue);
     }
+
+    [Fact]
+    public void TryGetHitsOnlyForTheCurrentKey()
+    {
+        Assert.False(slot.TryGet("a", out _));
+        slot.Get("a", Build);
+        Assert.True(slot.TryGet("a", out Resource hit));
+        Assert.Equal("a", hit.Name);
+        Assert.False(slot.TryGet("b", out _));
+        Assert.Single(built);
+    }
+
+    [Fact]
+    public void TryGetHitDoesNotAllocate()
+    {
+        slot.Get("a", Build);
+        slot.TryGet("a", out _);
+        long before = System.GC.GetAllocatedBytesForCurrentThread();
+        for (int frame = 0; frame < 10_000; frame++)
+        {
+            slot.TryGet("a", out _);
+        }
+        Assert.Equal(0, System.GC.GetAllocatedBytesForCurrentThread() - before);
+    }
 }
