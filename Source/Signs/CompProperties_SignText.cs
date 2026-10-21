@@ -32,6 +32,15 @@ public class CompProperties_SignText : CompProperties
 
     public Color defaultColor = new Color(0.13f, 0.11f, 0.09f, 1f);
 
+    /// <summary>Electronic signs: text is shown only while the building's CompPowerTrader is powered.</summary>
+    public bool requiresPower;
+
+    /// <summary>Draw text after the light overlay so it stays bright in the dark (LED look).</summary>
+    public bool glowsInDark;
+
+    /// <summary>Keep the building's CompGlower colour equal to the text colour.</summary>
+    public bool syncGlowColor;
+
     public CompProperties_SignText()
     {
         compClass = typeof(CompSignText);

@@ -26,6 +26,8 @@ public class CompSignText : ThingComp
     private float scale = MaxScale;
 
     private readonly SignRenderCache renderCache = new SignRenderCache();
+    private CompPowerTrader powerComp;
+    private CompGlower glower;
 
     public CompProperties_SignText Props => (CompProperties_SignText)props;
 
@@ -51,9 +53,21 @@ public class CompSignText : ThingComp
         {
             return;
         }
+        bool colorChanged = newColor != color;
         text = newText;
         color = newColor;
         scale = newScale;
+        if (colorChanged)
+        {
+            SyncGlowColor();
+        }
+    }
+
+    public override void PostSpawnSetup(bool respawningAfterLoad)
+    {
+        base.PostSpawnSetup(respawningAfterLoad);
+        powerComp = parent.GetComp<CompPowerTrader>();
+        glower = parent.GetComp<CompGlower>();
     }
 
     public override void PostExposeData()
@@ -113,7 +127,8 @@ public class CompSignText : ThingComp
     {
         base.PostDraw();
         Map map = parent.Map;
-        if (text.NullOrEmpty() || map == null || parent.Position.Fogged(map) || !TmpGlyphSource.TryCreate(out TmpGlyphSource glyphs))
+        if (!SignVisibility.ShouldDrawText(text, Props.requiresPower, powerComp != null, powerComp != null && powerComp.PowerOn)
+            || map == null || parent.Position.Fogged(map) || !TmpGlyphSource.TryCreate(out TmpGlyphSource glyphs))
         {
             return;
         }
@@ -140,6 +155,22 @@ public class CompSignText : ThingComp
     {
         base.Notify_MapRemoved();
         renderCache.Release();
+    }
+
+    /// <summary>The glower saves its own colour override, so this only runs when the text colour changes.</summary>
+    private void SyncGlowColor()
+    {
+        if (!Props.syncGlowColor)
+        {
+            return;
+        }
+        CompGlower target = glower ?? parent.GetComp<CompGlower>();
+        if (target != null)
+        {
+            Color32 c = color;
+            // Vanilla glow colours use alpha 0 (e.g. WallLamp glowColor (214,148,94,0)).
+            target.GlowColor = new ColorInt(c.r, c.g, c.b, 0);
+        }
     }
 
     public override string CompInspectStringExtra()

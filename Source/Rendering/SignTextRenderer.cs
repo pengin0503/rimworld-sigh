@@ -13,9 +13,6 @@ namespace SimpleSigh.Rendering;
 /// </summary>
 public static class SignTextRenderer
 {
-    /// <summary>After the sign sprite (Cutout 2900), before LightOverlay (3100) and FogOfWar (3175).</summary>
-    public const int RenderQueue = 3000;
-
     private static Shader textShader;
 
     private static Shader TextShader => textShader ??= ShaderDatabase.LoadShader("World/WorldText");
@@ -59,7 +56,7 @@ public static class SignTextRenderer
         }
 
         mesh = ToMesh(layout.Quads);
-        material = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, sign.TextColor) { renderQueue = RenderQueue });
+        material = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, sign.TextColor) { renderQueue = SignVisibility.RenderQueueFor(props.glowsInDark) });
         localCenter = new Vector3(layout.CenterX, 0f, layout.CenterZ);
         return true;
     }
