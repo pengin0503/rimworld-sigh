@@ -1,0 +1,20 @@
+# Proprietary RimWorld binaries and reference-only extracts must never be committed.
+rimworld_DLL/
+rimworld_DLL.zip
+.rimworld-references/
+.local-game-references/
+GameReferences/
+
+# Build and IDE scratch files (do not ignore intentional release DLLs).
+**/bin/
+**/obj/
+.vs/
+.idea/
+*.suo
+*.user
+
+# Superpowers' local, non-source execution state.
+.superpowers/
+.worktrees/
+__pycache__/
+.pytest_cache/
