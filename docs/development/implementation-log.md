@@ -40,3 +40,6 @@ Nothing in this log claims in-game success; in-game checks are `NOT RUN` unless 
 | D21 | Materials come from vanilla `MaterialPool` (never destroyed by us) | Keys are quantised Color32 + atlas + shader + queue, so pool growth is bounded by distinct colours | none |
 | D22 | Dev-mode inspect line shows cache counters | Plan Task 6 asks for debug-only instrumentation; dev mode is the in-game equivalent | none |
 | D23 | `Tests/SimpleSigh.GameSmoke` loads the DLL with the 1.7 assemblies and drives the real `ScribeSaver` | Strongest automated check available without the game; the full XML loader/ParseHelper cannot start (missing Brutal/Steam assemblies) | — |
+| D24 | `SignLayout.Fit` wraps at spaces / between CJK characters, breaks over-long Latin words by character, applies basic kinsoku (no `、。」ー` small kana etc. at line start, no `「（` at line end), and binary-searches the largest fitting scale | M2 Task 1; greedy wrap + monotone fit search; unit tests cover each rule | typographic edge cases |
+| D25 | Optional `maxScale` (user size) and `wrap` (only multiline signs wrap) parameters on `Fit` | Shrinking after wrapping would leave short lines; spec keeps 1×1/wall signs single-line | none (optional params) |
+| D26 | Fit tolerance is relative 1e-6 | An absolute 1e-4 let a slightly-too-large scale pass (found by test: 0.50005 instead of 0.5) | none |

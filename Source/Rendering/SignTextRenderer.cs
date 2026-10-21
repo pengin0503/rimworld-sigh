@@ -56,9 +56,11 @@ public static class SignTextRenderer
         }
 
         float pixelsToWorld = innerHeight / glyphs.LineHeight;
+        // The user's size caps the fit before wrapping, so smaller text also gets longer lines.
         SignLayoutResult layout = SignLayout.Fit(sign.Text, innerWidth, innerHeight,
-            s => GlyphQuadBuilder.MeasureLine(s, glyphs) * pixelsToWorld, innerHeight, MinFitScale);
-        float lineHeight = innerHeight * layout.Scale * sign.Scale;
+            s => GlyphQuadBuilder.MeasureLine(s, glyphs) * pixelsToWorld, innerHeight, MinFitScale,
+            maxScale: sign.Scale, wrap: sign.Props.multiline);
+        float lineHeight = innerHeight * layout.Scale;
         List<GlyphQuad> quads = GlyphQuadBuilder.ClipTo(
             GlyphQuadBuilder.Build(layout.Lines, glyphs, lineHeight), innerWidth * 0.5f, innerHeight * 0.5f);
         if (quads.Count == 0)

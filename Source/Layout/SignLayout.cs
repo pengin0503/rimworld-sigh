@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 
 namespace SimpleSigh.Layout;
 
@@ -25,37 +27,236 @@ public sealed class SignLayoutResult
 /// <summary>
 /// Chooses lines and a text scale so text fits a panel. Pure: widths come from the caller's
 /// measurement function so the same logic serves unit tests and the in-game glyph metrics.
+/// <para>
+/// Explicit line breaks are kept. Long paragraphs wrap at spaces (Latin) or between characters
+/// (Japanese/CJK); a Latin word longer than a line is broken by character. Basic Japanese line
+/// breaking rules (kinsoku) keep closing punctuation and small kana off the start of a line and
+/// opening brackets off its end. The largest scale (up to <c>maxScale</c>) that fits is chosen.
+/// </para>
 /// </summary>
 public static class SignLayout
 {
-    /// <param name="measureWidth">Width of a string at scale 1, in the same units as the panel.</param>
+    private const string NoLineStart = "、。，．・：；？！ー）」』】〕〉》｝］’”ゝゞヽヾぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ々〻‐–—…‥,.!?;:)]}";
+    private const string NoLineEnd = "（「『【〔〈《｛［‘“([{";
+    /// <summary>Relative tolerance for float sums; small enough that a too-large scale is never accepted.</summary>
+    private const float Tolerance = 1e-6f;
+    private const int SearchSteps = 24;
+
+    /// <param name="measureWidth">Width of a string at scale 1, in the same units as the panel. Must be additive per character.</param>
     /// <param name="lineHeight">Line height at scale 1.</param>
+    /// <param name="maxScale">Upper bound for the scale, e.g. the user's text size setting.</param>
+    /// <param name="wrap">False for single-line signs: only explicit line breaks start new lines.</param>
     public static SignLayoutResult Fit(string text, float availableWidth, float availableHeight,
-        Func<string, float> measureWidth, float lineHeight, float minScale)
+        Func<string, float> measureWidth, float lineHeight, float minScale, float maxScale = 1f, bool wrap = true)
     {
         if (string.IsNullOrEmpty(text))
         {
-            return new SignLayoutResult(Array.Empty<string>(), 1f, true);
+            return new SignLayoutResult(Array.Empty<string>(), maxScale, true);
         }
 
-        string[] lines = text.Split('\n');
-        float widest = 0f;
+        List<Element[]> paragraphs = Tokenize(text, measureWidth);
+        if (availableWidth <= 0f || availableHeight <= 0f || lineHeight <= 0f)
+        {
+            return new SignLayoutResult(Wrap(paragraphs, float.PositiveInfinity), minScale, false);
+        }
+
+        if (TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, maxScale, wrap, out List<string> lines))
+        {
+            return new SignLayoutResult(lines, maxScale, true);
+        }
+        if (!TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, minScale, wrap, out lines))
+        {
+            return new SignLayoutResult(lines, minScale, false);
+        }
+
+        float fitting = minScale;
+        float failing = maxScale;
+        List<string> best = lines;
+        for (int step = 0; step < SearchSteps; step++)
+        {
+            float middle = (fitting + failing) * 0.5f;
+            if (TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, middle, wrap, out lines))
+            {
+                fitting = middle;
+                best = lines;
+            }
+            else
+            {
+                failing = middle;
+            }
+        }
+        return new SignLayoutResult(best, fitting, true);
+    }
+
+    /// <summary>Lines wrapped for a fixed scale; <see cref="SignLayoutResult.Fits"/> reports only the width check.</summary>
+    public static SignLayoutResult FitAtScale(string text, float availableWidth, Func<string, float> measureWidth, float scale)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return new SignLayoutResult(Array.Empty<string>(), scale, true);
+        }
+        List<Element[]> paragraphs = Tokenize(text, measureWidth);
+        List<string> lines = Wrap(paragraphs, availableWidth / scale);
+        bool fits = true;
         foreach (string line in lines)
         {
-            widest = Math.Max(widest, measureWidth(line));
+            fits &= Within(measureWidth(line) * scale, availableWidth);
+        }
+        return new SignLayoutResult(lines, scale, fits);
+    }
+
+    private static bool TryFitAt(List<Element[]> paragraphs, float width, float height, float lineHeight, float scale, bool wrap, out List<string> lines)
+    {
+        float lineWidth = width / scale;
+        lines = Wrap(paragraphs, wrap ? lineWidth : float.PositiveInfinity, out float widest);
+        return Within(widest * scale, width) && Within(lines.Count * lineHeight * scale, height);
+    }
+
+    private static bool Within(float value, float limit) => value <= limit * (1f + Tolerance);
+
+    private static List<string> Wrap(List<Element[]> paragraphs, float maxWidth)
+    {
+        return Wrap(paragraphs, maxWidth, out _);
+    }
+
+    private static List<string> Wrap(List<Element[]> paragraphs, float maxWidth, out float widest)
+    {
+        var lines = new List<string>();
+        widest = 0f;
+        foreach (Element[] paragraph in paragraphs)
+        {
+            if (paragraph.Length == 0)
+            {
+                lines.Add(string.Empty);
+                continue;
+            }
+
+            int start = 0;
+            while (start < paragraph.Length)
+            {
+                int end = start;
+                float width = 0f;
+                while (end < paragraph.Length && (end == start || Within(width + paragraph[end].Width, maxWidth)))
+                {
+                    width += paragraph[end].Width;
+                    end++;
+                }
+                if (end < paragraph.Length)
+                {
+                    end = ChooseBreak(paragraph, start, end);
+                }
+
+                int visibleEnd = end;
+                while (visibleEnd > start && paragraph[visibleEnd - 1].IsSpace)
+                {
+                    visibleEnd--;
+                }
+                lines.Add(Join(paragraph, start, visibleEnd, out float lineWidth));
+                widest = Math.Max(widest, lineWidth);
+
+                start = end;
+                while (start < paragraph.Length && paragraph[start].IsSpace)
+                {
+                    start++;
+                }
+            }
+        }
+        return lines;
+    }
+
+    /// <summary>
+    /// <paramref name="overflow"/> is the first element that did not fit. Returns where the line ends:
+    /// the last allowed break opportunity, or a character break adjusted for kinsoku.
+    /// </summary>
+    private static int ChooseBreak(Element[] elements, int start, int overflow)
+    {
+        for (int b = overflow; b > start; b--)
+        {
+            if (CanBreakBefore(elements, b))
+            {
+                return b;
+            }
+        }
+        int forced = overflow;
+        while (forced - 1 > start && (IsNoLineStart(elements[forced]) || IsNoLineEnd(elements[forced - 1])))
+        {
+            forced--;
+        }
+        return forced;
+    }
+
+    private static bool CanBreakBefore(Element[] elements, int index)
+    {
+        Element previous = elements[index - 1];
+        Element current = elements[index];
+        if (IsNoLineStart(current) || IsNoLineEnd(previous))
+        {
+            return false;
+        }
+        return previous.IsSpace || current.IsSpace || previous.IsCjk || current.IsCjk;
+    }
+
+    private static bool IsNoLineStart(Element element) => element.Text.Length == 1 && NoLineStart.IndexOf(element.Text[0]) >= 0;
+
+    private static bool IsNoLineEnd(Element element) => element.Text.Length == 1 && NoLineEnd.IndexOf(element.Text[0]) >= 0;
+
+    private static string Join(Element[] elements, int start, int end, out float width)
+    {
+        var builder = new StringBuilder();
+        width = 0f;
+        for (int i = start; i < end; i++)
+        {
+            builder.Append(elements[i].Text);
+            width += elements[i].Width;
+        }
+        return builder.ToString();
+    }
+
+    private static List<Element[]> Tokenize(string text, Func<string, float> measureWidth)
+    {
+        var widths = new Dictionary<string, float>();
+        var paragraphs = new List<Element[]>();
+        foreach (string paragraph in text.Split('\n'))
+        {
+            var elements = new List<Element>();
+            TextElementEnumerator enumerator = StringInfo.GetTextElementEnumerator(paragraph);
+            while (enumerator.MoveNext())
+            {
+                string element = enumerator.GetTextElement();
+                if (!widths.TryGetValue(element, out float width))
+                {
+                    width = measureWidth(element);
+                    widths[element] = width;
+                }
+                elements.Add(new Element(element, width));
+            }
+            paragraphs.Add(elements.ToArray());
+        }
+        return paragraphs;
+    }
+
+    private readonly struct Element
+    {
+        public Element(string text, float width)
+        {
+            Text = text;
+            Width = width;
+            IsSpace = text == " " || text == "　";
+            IsCjk = IsCjkChar(text[0]);
         }
 
-        float scale = 1f;
-        if (widest > 0f)
-        {
-            scale = Math.Min(scale, availableWidth / widest);
-        }
-        if (lineHeight > 0f)
-        {
-            scale = Math.Min(scale, availableHeight / (lines.Length * lineHeight));
-        }
+        public string Text { get; }
 
-        bool fits = scale >= minScale && availableWidth > 0f && availableHeight > 0f;
-        return new SignLayoutResult(lines, fits ? scale : minScale, fits);
+        public float Width { get; }
+
+        public bool IsSpace { get; }
+
+        public bool IsCjk { get; }
+
+        private static bool IsCjkChar(char c)
+        {
+            return (c >= '⺀' && c <= '鿿') || (c >= '가' && c <= '힯') || (c >= '豈' && c <= '﫿')
+                || (c >= '＀' && c <= '￯') || (c >= '\uD840' && c <= '\uD87F');
+        }
     }
 }
