@@ -214,4 +214,25 @@ public class SignLayoutTests
         Assert.True(SignTextRules.TryNormalize(new string('あ', 256), 256, true, out _, out _));
         Assert.False(SignTextRules.TryNormalize(new string('あ', 257), 256, true, out _, out _));
     }
+
+    [Theory]
+    [InlineData(1.7188f, 0.5625f)] // notice board north/south panel (2x1 graphic)
+    [InlineData(0.7188f, 1.5156f)] // notice board east/west panel (1x2 graphic)
+    public void JapaneseTwoLineNoticeFitsBothBoardOrientations(float width, float height)
+    {
+        SignLayoutResult r = SignLayout.Fit("倉庫\n備品", width, height, Measure, height, 0.01f);
+        Assert.Equal(new[] { "倉庫", "備品" }, r.Lines);
+        AssertInside(r, width, height, height);
+    }
+
+    [Theory]
+    [InlineData(1.7188f, 0.5625f)]
+    [InlineData(0.7188f, 1.5156f)]
+    public void LongNoticeFitsBothBoardOrientationsWithoutLosingText(float width, float height)
+    {
+        string text = "本日の作業予定：\n午前は畑の収穫、午後は倉庫の整理。夜間は発電設備の点検を行います。Wood A-12 / Steel B-3";
+        SignLayoutResult r = SignLayout.Fit(text, width, height, Measure, height, 0.01f);
+        AssertInside(r, width, height, height);
+        Assert.Equal(text.Replace("\n", "").Replace(" ", ""), string.Concat(r.Lines).Replace(" ", ""));
+    }
 }

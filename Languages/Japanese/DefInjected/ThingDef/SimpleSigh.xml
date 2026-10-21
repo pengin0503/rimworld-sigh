@@ -4,4 +4,6 @@
   <SimpleSigh_BasicSign.description>無地の表示面を持つ小さな立て看板。選択して「文字を編集」から短いメッセージを書き込めます。</SimpleSigh_BasicSign.description>
   <SimpleSigh_WallSign.label>壁掛け看板</SimpleSigh_WallSign.label>
   <SimpleSigh_WallSign.description>壁に取り付ける看板。壁の隣に、壁の方向を向けて設置します。選択して「文字を編集」から短いメッセージを書き込めます。</SimpleSigh_WallSign.description>
+  <SimpleSigh_NoticeBoard.label>掲示板</SimpleSigh_NoticeBoard.label>
+  <SimpleSigh_NoticeBoard.description>長めのお知らせを書ける大型の立て掲示板。複数行に対応し、長い行は折り返され、掲示板に収まるよう縮小されます。選択して「文字を編集」から書き込めます。</SimpleSigh_NoticeBoard.description>
 </LanguageData>

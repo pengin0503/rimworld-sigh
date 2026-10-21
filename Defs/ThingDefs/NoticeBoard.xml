@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!--
+    2x1 notice board with multi-line text. Graphic_Multi: the landscape board is used for north/south,
+    a portrait board for east/west (west mirrors east), so the text always stays upright and is refitted
+    to the panel of the current rotation.
+  -->
+  <ThingDef ParentName="SimpleSigh_SignBase">
+    <defName>SimpleSigh_NoticeBoard</defName>
+    <label>notice board</label>
+    <description>A large standing board for longer notices. Text can span several lines; long lines wrap and shrink to fit the board. Select it and use "Edit text".</description>
+    <graphicData>
+      <texPath>Things/Building/SimpleNoticeBoard</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(2,1)</drawSize>
+      <damageData>
+        <rect>(0.05,0.25,1.9,0.7)</rect>
+      </damageData>
+    </graphicData>
+    <size>(2,1)</size>
+    <rotatable>true</rotatable>
+    <defaultPlacingRot>North</defaultPlacingRot>
+    <costStuffCount>50</costStuffCount>
+    <statBases>
+      <MaxHitPoints>120</MaxHitPoints>
+      <WorkToBuild>900</WorkToBuild>
+      <Mass>8</Mass>
+    </statBases>
+    <uiOrder>2952</uiOrder>
+    <comps>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>256</maxElements>
+        <multiline>true</multiline>
+        <!-- Match the untinted panels drawn by tools/textures/generate_textures.py -->
+        <panelRect>(0.0703,0.2969,0.8594,0.5625)</panelRect>
+        <panelRectHorizontal>(0.1406,0.1641,0.7188,0.7578)</panelRectHorizontal>
+        <panelPadding>0.06</panelPadding>
+      </li>
+    </comps>
+  </ThingDef>
+
+</Defs>

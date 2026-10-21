@@ -31,8 +31,9 @@ public static class SignTextRenderer
         Vector2 drawSize = graphic?.drawSize ?? Vector2.one;
         Vector3 offset = graphic?.DrawOffset(rot) ?? Vector3.zero;
         bool rotatedSize = graphic != null && !graphic.ShouldDrawRotated;
+        bool mirrored = graphic != null && ((rot == Rot4.West && graphic.WestFlipped) || (rot == Rot4.East && graphic.EastFlipped));
         return SignPanelGeometry.Place(ToPanel(props.panelRect), ToPanel(props.panelRectHorizontal),
-            drawSize.x, drawSize.y, rot.AsInt, offset.x, offset.z, rotatedSize);
+            drawSize.x, drawSize.y, rot.AsInt, offset.x, offset.z, rotatedSize, mirrored);
     }
 
     /// <summary>Creates the mesh, or returns false when there is nothing to draw.</summary>

@@ -182,6 +182,32 @@ class WallSignTests(unittest.TestCase):
             self.assertEqual(graphic.findtext(f"drawOffset{rot}"), offset, rot)
 
 
+class NoticeBoardTests(unittest.TestCase):
+    def setUp(self):
+        self.board = thing_def("SimpleSigh_NoticeBoard")
+
+    def test_is_stuffable_2x1(self):
+        cats = {li.text for li in self.board.find("stuffCategories")}
+        self.assertTrue(STUFF_CATEGORIES.issubset(cats))
+        self.assertEqual(self.board.findtext("size"), "(2,1)")
+        self.assertEqual(self.board.findtext("rotatable"), "true")
+
+    def test_is_multiline_256(self):
+        props = comp_props(self.board, SignCompTests.PROPS)
+        self.assertEqual(props.findtext("maxElements"), "256")
+        self.assertEqual(props.findtext("multiline"), "true")
+        self.assertTrue(props.findtext("panelRectHorizontal"))
+
+    def test_uses_portrait_art_for_east_west(self):
+        graphic = self.board.find("graphicData")
+        self.assertEqual(graphic.findtext("graphicClass"), "Graphic_Multi")
+        self.assertEqual(graphic.findtext("drawSize"), "(2,1)")
+        north = png_size(path("Textures", graphic.findtext("texPath") + "_north.png"))
+        east = png_size(path("Textures", graphic.findtext("texPath") + "_east.png"))
+        self.assertEqual(north[0], 2 * north[1])
+        self.assertEqual(east[1], 2 * east[0])
+
+
 class LanguageTests(unittest.TestCase):
     REQUIRED = {"SimpleSigh_EditText", "SimpleSigh_InvalidText"}
 

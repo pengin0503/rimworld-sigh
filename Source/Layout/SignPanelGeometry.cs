@@ -47,12 +47,32 @@ public static class SignPanelGeometry
 {
     /// <param name="rotation">RimWorld Rot4 index: 0 north, 1 east, 2 south, 3 west.</param>
     /// <param name="offsetX">Graphic draw offset for this rotation (e.g. wall attachments).</param>
-    /// <param name="horizontalUsesRotatedSize">True when the graphic swaps its draw size for east/west (Graphic_Multi that is not drawn rotated).</param>
+    /// <param name="horizontalUsesRotatedSize">True when the graphic swaps its draw size for east/west (graphics that are not drawn rotated).</param>
+    /// <param name="mirrorX">True when the graphic mirrors its texture for this rotation (Graphic_Multi west from east).</param>
     public static PanelPlacement Place(PanelRect panel, PanelRect horizontalPanel, float drawSizeX, float drawSizeZ,
-        int rotation, float offsetX, float offsetZ, bool horizontalUsesRotatedSize)
+        int rotation, float offsetX, float offsetZ, bool horizontalUsesRotatedSize, bool mirrorX = false)
     {
-        float centerX = (panel.X + panel.Width * 0.5f - 0.5f) * drawSizeX;
-        float centerZ = (panel.Y + panel.Height * 0.5f - 0.5f) * drawSizeZ;
-        return new PanelPlacement(centerX + offsetX, centerZ + offsetZ, panel.Width * drawSizeX, panel.Height * drawSizeZ);
+        bool horizontal = rotation == 1 || rotation == 3;
+        PanelRect rect = panel;
+        float sizeX = drawSizeX;
+        float sizeZ = drawSizeZ;
+        if (horizontal && horizontalUsesRotatedSize)
+        {
+            // Graphic.MeshAt swaps the draw size for east/west when the graphic is not drawn rotated.
+            sizeX = drawSizeZ;
+            sizeZ = drawSizeX;
+            if (!horizontalPanel.IsEmpty)
+            {
+                rect = horizontalPanel;
+            }
+        }
+
+        float fractionX = rect.X + rect.Width * 0.5f - 0.5f;
+        if (mirrorX)
+        {
+            fractionX = -fractionX;
+        }
+        float centerZ = (rect.Y + rect.Height * 0.5f - 0.5f) * sizeZ;
+        return new PanelPlacement(fractionX * sizeX + offsetX, centerZ + offsetZ, rect.Width * sizeX, rect.Height * sizeZ);
     }
 }
