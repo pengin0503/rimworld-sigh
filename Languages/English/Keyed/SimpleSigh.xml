@@ -2,4 +2,6 @@
 <LanguageData>
   <SimpleSigh_EditText>Edit text</SimpleSigh_EditText>
   <SimpleSigh_InvalidText>This text cannot be used on the sign.</SimpleSigh_InvalidText>
+  <SimpleSigh_TooLong>The text is too long ({0} / {1} characters).</SimpleSigh_TooLong>
+  <SimpleSigh_NewlineNotAllowed>Line breaks cannot be used on this sign.</SimpleSigh_NewlineNotAllowed>
 </LanguageData>

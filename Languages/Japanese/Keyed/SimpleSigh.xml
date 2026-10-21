@@ -2,4 +2,6 @@
 <LanguageData>
   <SimpleSigh_EditText>文字を編集</SimpleSigh_EditText>
   <SimpleSigh_InvalidText>この文字列は看板に使用できません。</SimpleSigh_InvalidText>
+  <SimpleSigh_TooLong>文字数が上限を超えています（{0} / {1} 文字）。</SimpleSigh_TooLong>
+  <SimpleSigh_NewlineNotAllowed>この看板では改行を使用できません。</SimpleSigh_NewlineNotAllowed>
 </LanguageData>
