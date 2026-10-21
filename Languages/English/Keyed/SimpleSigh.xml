@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <SimpleSigh_EditText>Edit text</SimpleSigh_EditText>
+  <SimpleSigh_InvalidText>This text cannot be used on the sign.</SimpleSigh_InvalidText>
+  <SimpleSigh_TooLong>The text is too long ({0} / {1} characters).</SimpleSigh_TooLong>
+  <SimpleSigh_NewlineNotAllowed>Line breaks cannot be used on this sign.</SimpleSigh_NewlineNotAllowed>
+  <SimpleSigh_EditTextDesc>Change the text, colour and size shown on this sign.</SimpleSigh_EditTextDesc>
+  <SimpleSigh_EditTitle>Edit {0}</SimpleSigh_EditTitle>
+  <SimpleSigh_TextColor>Text colour</SimpleSigh_TextColor>
+  <SimpleSigh_TextSize>Text size: {0}%</SimpleSigh_TextSize>
+  <SimpleSigh_CopyText>Copy text</SimpleSigh_CopyText>
+  <SimpleSigh_CopyTextDesc>Copy this sign's text, colour and size so they can be pasted onto another sign.</SimpleSigh_CopyTextDesc>
+  <SimpleSigh_PasteText>Paste text</SimpleSigh_PasteText>
+  <SimpleSigh_PasteTextDesc>Replace this sign's text, colour and size with the copied ones.</SimpleSigh_PasteTextDesc>
+  <SimpleSigh_Copied>Sign text copied.</SimpleSigh_Copied>
+  <SimpleSigh_NoText>No text yet. Use "Edit text" to write on the sign.</SimpleSigh_NoText>
+  <SimpleSigh_MissingGlyphs>Some characters cannot be drawn with the current game font and are shown as "?".</SimpleSigh_MissingGlyphs>
+</LanguageData>

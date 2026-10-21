@@ -1,0 +1,169 @@
+name: Simple Sigh prerelease
+
+# Publishing a GitHub Release is opt-in via a v-prefixed tag.
+# The archive contains the committed SimpleSigh.dll; no in-game validation.
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    name: Validate and publish installable ZIP
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: 'true'
+    steps:
+      - name: Checkout tagged source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Require tag to point to a commit on main
+        shell: bash
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo 'Release tag must reference a commit reachable from main' >&2
+            exit 1
+          fi
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Check packaging rules
+        run: python -m unittest discover -s Tests/PackagingTests -v
+      - name: Check mod structure
+        run: python -m unittest discover -s Tests/StructureTests -v
+      - name: Run game-independent C# tests
+        run: dotnet test Tests/SimpleSigh.Text.Tests/SimpleSigh.Text.Tests.csproj --configuration Release --nologo
+      - name: Build installable ZIP from committed binary
+        run: |
+          python tools/package_release.py \
+            --version "$GITHUB_REF_NAME" \
+            --output "dist/SimpleSigh-${GITHUB_REF_NAME}.zip"
+      - name: Write prerelease notice
+        shell: bash
+        run: |
+          cat > release-notes.md <<'EOF'
+          **RimWorld 1.7 専用・ゲーム内動作未検証のテスト版（プレリリース）です。**
+
+          ダウンロードするのは `SimpleSigh-*.zip` です。GitHubが自動生成する
+          `Source code (zip)` はMODインストール用ではありません。
+
+          ZIPを展開し、内部の `SimpleSigh` フォルダごとRimWorldの `Mods` フォルダに移動してください。
+          RimWorldを起動し、MOD設定で `Simple Sigh` を有効にして再起動します。
+
+          ソースコードの自動テストは実行していますが、RimWorld 1.7実機でのロード・
+          日本語描画・セーブ/ロード・電光掲示板の電力動作は未確認です。
+          セーブデータをバックアップしたうえでテストしてください。
+          EOF
+      - name: Publish GitHub prerelease with runtime ZIP
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/SimpleSigh-${GITHUB_REF_NAME}.zip" \
+            --verify-tag --prerelease --latest=false \
+            --title "Simple Sigh ${GITHUB_REF_NAME} (test build)" \
+            --notes-file release-notes.md
+
+  first-test-release:
+    # One-time bootstrap for PR #3: after merge into main publish v0.1.0-test.1.
+    # Later main pushes are no-ops once this prerelease exists.
+    if: github.ref == 'refs/heads/main'
+    name: Publish first test release (once)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: 'true'
+    steps:
+      - name: Checkout merged commit
+        uses: actions/checkout@v7
+      - name: Check whether initial prerelease exists
+        id: gate
+        shell: bash
+        run: |
+          if gh release view v0.1.0-test.1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'create=false' >> "$GITHUB_OUTPUT"
+            echo 'v0.1.0-test.1 already published; no new release.'
+          else
+            echo 'create=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Set up Python
+        if: steps.gate.outputs.create == 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Set up .NET 10
+        if: steps.gate.outputs.create == 'true'
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test package rules
+        if: steps.gate.outputs.create == 'true'
+        run: python -m unittest discover -s Tests/PackagingTests -v
+      - name: Test XML and mod structure
+        if: steps.gate.outputs.create == 'true'
+        run: python -m unittest discover -s Tests/StructureTests -v
+      - name: Test C# text and layout
+        if: steps.gate.outputs.create == 'true'
+        run: dotnet test Tests/SimpleSigh.Text.Tests/SimpleSigh.Text.Tests.csproj --configuration Release --nologo
+      - name: Package runtime-only files
+        if: steps.gate.outputs.create == 'true'
+        run: |
+          python tools/package_release.py \
+            --version v0.1.0-test.1 \
+            --output dist/SimpleSigh-v0.1.0-test.1.zip
+      - name: Write initial prerelease notes
+        if: steps.gate.outputs.create == 'true'
+        shell: bash
+        run: |
+          cat > release-notes.md <<'EOF'
+          ## Simple Sigh 0.1.0 テスト版 — RimWorld 1.7
+
+          **ゲーム内動作未確認のプレリリース**です。
+          このビルドは構造・C#ユニット・ZIPパッケージの自動テストを通過していますが、
+          RimWorld本体での起動、文字表示、壁掛け設置、セーブ／ロード、
+          LED表示と停電・復電はまだ検証していません。
+
+          **インストール:** Assets の SimpleSigh-v0.1.0-test.1.zip をダウンロードし、
+          展開した SimpleSigh フォルダを RimWorld/Mods/ にコピーしてください。
+          ゲーム内でMODを有効にし、再起動します。
+          GitHubの Source code (zip) はMODインストール用ではありません。
+
+          **既知のコードレビュー指摘（未修正）:**
+          - フォントバックエンド交換時のキャッシュ更新
+          - テキストを空にした際のGPUメッシュ解放
+          - 看板境界にあるグリフの部分クリッピング
+          - ソースと同梱DLLの整合性を検証スクリプトで強制していないこと
+
+          既存セーブには必ずバックアップを取ってから導入してください。
+          詳細は https://github.com/pengin0503/rimworld-sigh を参照。
+          EOF
+      - name: Create tag and publish prerelease
+        if: steps.gate.outputs.create == 'true'
+        shell: bash
+        run: |
+          gh release create v0.1.0-test.1 dist/SimpleSigh-v0.1.0-test.1.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title 'Simple Sigh v0.1.0-test.1 (untested in game)' \
+            --notes-file release-notes.md

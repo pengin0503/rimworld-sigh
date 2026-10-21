@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <AssemblyName>SimpleSigh</AssemblyName>
+    <RootNamespace>SimpleSigh</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+    <DebugType>none</DebugType>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <!-- Keep the committed DLL reproducible: no git commit id baked into the assembly. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <EnableSourceLink>false</EnableSourceLink>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <!-- Only Release builds write the shipped DLL; Debug builds stay in the ignored bin/ folder. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <OutputPath>../1.7/Assemblies/</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' != 'Release'">
+    <OutputPath>bin/$(Configuration)/</OutputPath>
+  </PropertyGroup>
+
+  <!--
+    Compile-time references to RimWorld 1.7. They are never copied or committed.
+      RIMWORLD_REFERENCE_DIR : folder that directly contains Assembly-CSharp.dll, Waylith.dll, UnityStubs.dll
+                               (e.g. the private extraction of rimworld_DLL.zip).
+      RIMWORLD_GAME_DIR      : a RimWorld 1.7 installation; the managed folder is probed below.
+    A reference folder only allows compiling; it is not a playable game.
+  -->
+  <PropertyGroup Condition="'$(RimWorldReferenceDir)' == '' And '$(RIMWORLD_REFERENCE_DIR)' != ''">
+    <RimWorldReferenceDir>$(RIMWORLD_REFERENCE_DIR)</RimWorldReferenceDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RimWorldReferenceDir)' == '' And '$(RIMWORLD_GAME_DIR)' != '' And Exists('$(RIMWORLD_GAME_DIR)/RimWorldWin64_Data/Managed/Assembly-CSharp.dll')">
+    <RimWorldReferenceDir>$(RIMWORLD_GAME_DIR)/RimWorldWin64_Data/Managed</RimWorldReferenceDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RimWorldReferenceDir)' == '' And '$(RIMWORLD_GAME_DIR)' != ''">
+    <RimWorldReferenceDir>$(RIMWORLD_GAME_DIR)</RimWorldReferenceDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldReferenceDir)/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Waylith">
+      <HintPath>$(RimWorldReferenceDir)/Waylith.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityStubs">
+      <HintPath>$(RimWorldReferenceDir)/UnityStubs.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="SimpleSighCheckReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(RimWorldReferenceDir)/Assembly-CSharp.dll')"
+           Text="RimWorld 1.7 reference assemblies not found. Set RIMWORLD_REFERENCE_DIR (folder containing Assembly-CSharp.dll, Waylith.dll, UnityStubs.dll) or RIMWORLD_GAME_DIR. Current: '$(RimWorldReferenceDir)'." />
+  </Target>
+
+</Project>
