@@ -38,8 +38,10 @@ $ tools/verify.sh            # RIMWORLD_REFERENCE_DIR=<private extraction of rim
 == smoke                SMOKE PASS (assembly/XML only; the game was not run)
 ```
 
-`1.7/Assemblies/SimpleSigh.dll` (Release, deterministic: identical bytes on clean rebuild, no local paths embedded)
-SHA-256 `2acb82d2902f7ffbefebad19e505972c2c72f2aadc3b09cd2afd27fe014cd374`.
+`1.7/Assemblies/SimpleSigh.dll` (Release, deterministic: identical bytes on clean rebuild and across commits,
+no local paths or git commit id embedded) SHA-256 `c4d4189b678170e7ae3b79a18fcee9a6c9372af26fce4ad725bf545a90f8e4d6`.
+(The first committed build embedded the commit id via the SDK's source-revision default; fixed by
+`IncludeSourceRevisionInInformationalVersion=false`.)
 
 ## Blocked / not verifiable here
 

@@ -331,6 +331,11 @@ class ProjectTests(unittest.TestCase):
         self.assertTrue(others and all("1.7" not in v for v in others), paths)
         self.assertEqual(self.prop("AppendTargetFrameworkToOutputPath"), "false")
 
+    def test_committed_dll_is_reproducible(self):
+        """The SDK otherwise bakes the git commit id into the DLL, so every commit would change it."""
+        self.assertEqual(self.prop("IncludeSourceRevisionInInformationalVersion"), "false")
+        self.assertEqual(self.prop("Deterministic"), "true")
+
     def test_game_references_are_not_copied(self):
         refs = {r.get("Include"): r for r in self.project.iter("Reference")}
         for name in self.GAME_REFERENCES:

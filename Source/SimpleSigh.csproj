@@ -13,6 +13,10 @@
     <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
     <DebugType>none</DebugType>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <!-- Keep the committed DLL reproducible: no git commit id baked into the assembly. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <EnableSourceLink>false</EnableSourceLink>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
   <!-- Only Release builds write the shipped DLL; Debug builds stay in the ignored bin/ folder. -->

@@ -48,3 +48,4 @@ Nothing in this log claims in-game success; in-game checks are `NOT RUN` unless 
 | D29 | User size = fraction of the largest fitting size (two-pass fit) | Plain cap left a dead zone on the slider for long text (test failure) | none |
 | D30 | Allocation-free cache hit path (`TryGet`) | Capturing lambda allocated per sign per frame; spec lists continuous GC as a release blocker | none |
 | D31 | Offline preview tool (`tools/preview`) | Visual check of panel placement per def/rotation without the game; output clearly labelled offline | none |
+| D32 | Ship the Release DLL; `IncludeSourceRevisionInInformationalVersion=false`, `Deterministic=true` | The SDK baked `1.0.0+<commit>` into the DLL, so it changed on every commit (found when verify.sh flagged the committed DLL as stale) | none |
