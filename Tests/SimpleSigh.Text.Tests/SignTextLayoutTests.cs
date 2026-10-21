@@ -71,4 +71,36 @@ public class SignTextLayoutTests
         SignTextLayout.Result r = SignTextLayout.Build("A", new PanelPlacement(0f, 0f, 0.01f, 0.01f), 0.5f, false, 1f, glyphs);
         Assert.Empty(r.Quads);
     }
+
+    [Fact]
+    public void LongTextOnSmallSingleLineSignUsesMoreLegibleAutomaticLineBreaks()
+    {
+        // An editor with no explicit newline may still wrap the displayed text
+        // when the one-line fit would unnecessarily reduce the glyph size.
+        const string text = "研究施設入口";
+        const float padding = 0.08f;
+        float innerHeight = Panel.Height - 2f * padding * System.Math.Min(Panel.Width, Panel.Height);
+        float innerWidth = Panel.Width - 2f * padding * System.Math.Min(Panel.Width, Panel.Height);
+        System.Func<string, float> measure = s => GlyphQuadBuilder.MeasureLine(s, glyphs) * innerHeight / glyphs.LineHeight;
+        SignLayoutResult originalOneLine = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight,
+            SignTextLayout.MinFitScale, wrap: false);
+
+        SignTextLayout.Result readable = SignTextLayout.Build(text, Panel, padding, multiline: false, userScale: 1f, glyphs);
+
+        Assert.True(readable.Fits);
+        Assert.Equal(6, readable.Quads.Count);
+        Assert.True(readable.LineHeight > innerHeight * originalOneLine.Scale * 1.05f,
+            $"Display size {readable.LineHeight} did not improve over one-line size {innerHeight * originalOneLine.Scale}");
+        Assert.True(readable.Quads.Select(q => System.MathF.Round(q.Y0, 4)).Distinct().Count() >= 2);
+        AssertInsidePadded(readable, Panel, padding);
+    }
+
+    [Fact]
+    public void ShortTextOnSmallSingleLineSignRemainsOneDisplayRow()
+    {
+        SignTextLayout.Result readable = SignTextLayout.Build("研究", Panel, 0.08f, false, 1f, glyphs);
+        Assert.Equal(2, readable.Quads.Count);
+        Assert.Equal(readable.Quads[0].Y0, readable.Quads[1].Y0, 5);
+    }
+
 }
