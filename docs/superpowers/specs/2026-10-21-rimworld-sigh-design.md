@@ -1,11 +1,11 @@
-# RimWorld Sigh — 設計仕様（2026-10-21）
+# Simple Sigh — 設計仕様（2026-10-21）
 
 ## 1. 目的と前提
 
 RimWorld 1.7（Waylith）向けに、バニラの建築物に自然になじむ「自由入力できる看板」と「文字を表示する電光掲示板」を追加する。看板の文字は近傍の説明ラベルではなく、看板の表示面に収まって見えることを完成基準とする。
 
 ユーザーが確定した要件:
-- 独立した新規MOD。Blocky Core / Harmony など別のWorkshop MODを必須にしない。
+- 新規の看板MOD。Harmony等の一般的な前提MODは、必要性を確認した場合には正式な前提MODとして採用してよい。無関係な依存関係は増やさない。
 - 木・石・金属などの材質で建設でき、外観はバニラ準拠。
 - 看板設置後、任意の日本語・英数字・記号を入力して看板に表示する。
 - できればLED/電光掲示板も追加する。
@@ -14,8 +14,8 @@ RimWorld 1.7（Waylith）向けに、バニラの建築物に自然になじむ�
 本書の設計上の前提（レビュー時に変更可能）:
 - 初期対応は1.7のみ。1.6互換・既存の他MOD看板からの変換は対象外。
 - 文字は看板ごとに保存し、既存のマップ・家具・建物の機能は変更しない。
-- MOD開発・ビルドには.NET 10 SDKとRimWorld本体のアセンブリを使用する。ランタイムの追加Workshop依存は不要。
-- MOD内部名称は RimWorld Sigh、packageId は `pengin0503.rimworldsigh` と仮定し、リポジトリ名は変更しない。
+- MOD開発・ビルドには.NET 10 SDKとRimWorld本体のアセンブリを使用する。Harmony等を必要とする場合は、その依存先とロード順をMODメタデータに明記する。
+- MOD表示名・内部プロジェクト名は **Simple Sigh**。`packageId` は **`pengin0503.simplesigh`**（XML識別子に空白は使わない）。C#ルート名前空間・アセンブリ名は `SimpleSigh`、リポジトリ名は `rimworld-sigh` のまま変更しない。
 
 ## 2. 比較した実装方式
 
@@ -23,7 +23,7 @@ RimWorld 1.7（Waylith）向けに、バニラの建築物に自然になじむ�
 2. Blocky Signsからの移植・Blocky Core除去。既存の文字表示を再利用できるが、依存共通部品と旧版1.6向けコードの再設計が必要で、外観も新規作成が必要。
 3. GUIラベルだけを看板へ重ねる方式。実装が速いが、ズーム・回転・描画順序により「看板表面の文字」という要件を満たしにくい。
 
-方式1を採用する。方式3は日本語グリフまたはWaylith描画が未対応のときの**暫定的なフォールバック**としてのみ扱い、最終受け入れは表示面への描画で判定する。
+方式1を採用する。通常の建築・文字保存に限ればHarmonyの必要性は未確認であり、必要なパッチ対象が特定されるまで追加しない。方式3は日本語グリフまたはWaylith描画が未対応のときの**暫定的なフォールバック**としてのみ扱い、最終受け入れは表示面への描画で判定する。
 
 ## 3. ユーザー体験と建築物
 
@@ -44,7 +44,7 @@ RimWorld 1.7（Waylith）向けに、バニラの建築物に自然になじむ�
 ## 4. アーキテクチャ
 
 ### コンテンツ層
-- `About/About.xml`: 名前、説明、作者、`supportedVersions=1.7`。
+- `About/About.xml`: 表示名 `Simple Sigh`、識別子 `pengin0503.simplesigh`、説明、作者、`supportedVersions=1.7`。Harmony等が実際に必要と確定した場合のみ `modDependencies` を付与。
 - `Defs/ThingDefs/*.xml`: 材質指定（stuffCategories）・配置/サイズ・コスト・研究条件・`drawGUIOverlay`等の定義。
 - `Textures/`: バニラの透視角と彩色に合う新規描き起こし看板PNG。バニラゲームの既存テクスチャを無断再配布しない。
 - `Languages/Japanese` および `Languages/English`: 建築物名、入力UI、設定名など。
@@ -58,15 +58,16 @@ RimWorld 1.7（Waylith）向けに、バニラの建築物に自然になじむ�
 - `Resources`: サイン破棄/ミニファイ/別マップ移動/設定変更時のテクスチャ解放と再構築。共有キャッシュ採用時は参照管理。
 
 ### 描画上の重要制約
-- 1.7のWaylith用アセンブリを参照し、独自のHarmonyパッチを必要としない構成を優先。
+- 1.7のWaylith用アセンブリを参照する。まずバニラAPI/ThingCompのみで成立するか確認し、不足する実装点が判明した場合はHarmonyパッチを採用してよい。パッチは対象メソッド・理由・代替案・互換性テストを記録する。
 - 日本語グリフを古いUnityテクスチャ・Latin専用アトラスだけで焼かない。1.7のゲーム内日本語フォントとグリフ描画を実機で検証し、未対応ならGUIフォールバック（暫定）を明示して、世界空間描画の完了扱いにはしない。
 - 看板1枚につき毎フレームのフォントテクスチャ生成・全マップ走査をしない。カメラズーム距離・可視範囲・描画レイヤーと盤面の重なりを評価する。
 - 1.7のAPIは実機と参照アセンブリでシグネチャを確認して確定する。未検証のAPI名を仕様として断定しない。
+- Harmonyが必要になった場合は`About.xml`の`modDependencies`に`brrainz.harmony`とWorkshop ID `2009463077`を明示し、公式Harmonyの参照アセンブリを使う。`0Harmony.dll`をMODに同梱しない。必要性を事前にテストで確定し、ゲーム更新時にパッチ動作とロード順を再確認する。
 
 ## 5. 技術環境・ディレクトリ
 
-- `Source/RimWorldSigh.csproj`: `net10.0`。ゲームインストールの`Assembly-CSharp.dll`、`UnityStubs.dll`、`Waylith.dll`を`Reference`として指定（`Private=false`）。ビルド成果物は`1.7/Assemblies/`へ。
-- `1.7/Assemblies`: ゲームが読み込むDLL。ソースを置くだけでは動作しない。
+- `Source/SimpleSigh.csproj`: `net10.0`、`AssemblyName=SimpleSigh`。ゲームインストールの`Assembly-CSharp.dll`、`UnityStubs.dll`、`Waylith.dll`を`Reference`として指定（`Private=false`）。ビルド成果物は`1.7/Assemblies/`へ。
+- `1.7/Assemblies`: ゲームが読み込む `SimpleSigh.dll`。ソースを置くだけでは動作しない。外部ライブラリDLLは著作権・依存方法を確認したうえで取り扱い、Harmony採用時は同梱せず公式Workshop前提MODに委ねる。
 - `docs/superpowers/plans/`: 承認後のTDD実装計画。
 - 既存セーブとの互換性維持のため、defNameおよびセーブのフィールド名を公開後は安易に変更しない。
 - 実機ゲームのDLLや著作権で再配布不可な素材はGit管理しない。外部ソースを引用・移植する場合は適用ライセンスと帰属表示を保持。
@@ -91,14 +92,14 @@ RimWorld 1.7（Waylith）向けに、バニラの建築物に自然になじむ�
 - 100/500/1000基（推奨テストケース）で描画負荷、GC、ログエラー、保存容量を比較。
 - RimWorld 1.7の既存セーブ途中導入、および新規セーブで検証。途中削除は保証しない。
 - Workshop配布構成と日英説明を整理。
-- CIは開発序盤で頻繁に走らせず、ローカルの単体・構造テストを優先し、最終確認時に導入/実行する。
+- CIは開発序盤で頻繁に走らせず、ローカルの単体・構造テストを優先し、最終確認時に導入/実行する。依存が導入された場合は依存あり/なし両方の期待挙動と依存バージョンを検証する。
 
 ## 7. テスト戦略と未完了条件
 
 - ゲーム非依存の`SignLayout`・入力上限・改行正規化は単体テスト（成功/失敗境界）で確認。
 - XMLの構文、defNameの重複、テクスチャパス、参照DLLが成果物に混入していないことを自動検証。
 - コンパイルにはRimWorld 1.7のインストールが必要。CIやこの環境にゲームDLLがない場合、ビルド成功を宣言しない。
-- 実機受け入れ：mod list上で外部依存なし、建築→編集→表示→保存→再起動→再表示、日本語描画、素材変更、電源動作。
+- 実機受け入れ：mod list上で**宣言済みの必要な前提MODだけ**で起動し、建築→編集→表示→保存→再起動→再表示、日本語描画、素材変更、電源動作を確認する。
 - ワールド座標に追従せず看板から離れて浮く文字、判読不能な日本語、連続的なGC、セーブ破損はリリース阻止条件。
 
 ## 8. 範囲外
@@ -109,9 +110,11 @@ RimWorld 1.7（Waylith）向けに、バニラの建築物に自然になじむ�
 
 - RimWorld 1.7移行ガイド: https://rimworldwiki.com/wiki/Modding_Tutorials/RimWorld_1.7_Mod_Updates
 - RimWorld 1.7 C#セットアップ: https://rimworldwiki.com/wiki/Modding_Tutorials/Setting_up_a_solution
+- Harmonyの正式なMOD依存方法: https://github.com/pardeike/HarmonyRimWorld
+- MOD `packageId` 命名・依存宣言: https://rimworldwiki.com/wiki/Modding_Tutorials/About.xml
 - Blocky Signs（MIT、設計の参考のみ）: https://github.com/zed-0xff/RW-BlockySigns
 - Signs and Comments Fixed（MIT、1.7日本語描画・キャッシュの注意例）: https://github.com/DanZinagri/SignsAndCommentsFixed
 
-## 10. 承認待ち
+## 10. 設計変更と実装への移行
 
-本書は実装前の設計仕様。ユーザーがレビュー・承認した後、Superpowersのwriting-plansで各マイルストーンを実装可能な細粒度タスクへ分解し、検証条件を備えた計画を作る。**本書を追加したことだけをもって実装完成・ビルド確認済みとは扱わない。**
+2026-10-21の追加要望により、名称を `Simple Sigh` へ変更し、必要ならHarmonyなどの正式な前提MODを採用できる設計に変更した。元リポジトリ名 `rimworld-sigh` は保持する。実装着手の前に、Superpowersのwriting-plansで実装手順・テスト・レビューを定義する。**本書が存在することはビルド成功やゲーム内動作を意味しない。**
