@@ -59,12 +59,26 @@ public static class SignTextLayout
         // At scale 1 one line fills the panel height.
         float pixelsToWorld = innerHeight / glyphs.LineHeight;
         Func<string, float> measure = s => GlyphQuadBuilder.MeasureLine(s, glyphs) * pixelsToWorld;
-        SignLayoutResult layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, MinFitScale, wrap: multiline);
+        // An editor restricted to one input line may still DISPLAY that text on multiple rows.
+        // In a narrow 1x1 panel this preserves legibility rather than shrinking a long Japanese
+        // label into an unreadable strip. Short strings remain on one row.
+        bool displayWrap = multiline;
+        SignLayoutResult layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, MinFitScale, wrap: displayWrap);
+        if (!multiline)
+        {
+            SignLayoutResult wrapped = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, MinFitScale, wrap: true);
+            if (wrapped.Fits && (!layout.Fits || wrapped.Scale > layout.Scale * 1.03f))
+            {
+                layout = wrapped;
+                displayWrap = true;
+            }
+        }
         if (userScale < 1f && layout.Fits)
         {
-            // The user size is a fraction of the largest size that fits; refit so smaller text can use longer lines.
+            // The size slider is a fraction of the largest legible size; preserve the chosen
+            // wrapping strategy when refitting so the slider cannot unexpectedly break layout.
             float target = Math.Max(MinFitScale, layout.Scale * userScale);
-            layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, Math.Min(MinFitScale, target), target, multiline);
+            layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, Math.Min(MinFitScale, target), target, displayWrap);
         }
         float lineHeight = innerHeight * layout.Scale;
         List<GlyphQuad> quads = GlyphQuadBuilder.ClipTo(
