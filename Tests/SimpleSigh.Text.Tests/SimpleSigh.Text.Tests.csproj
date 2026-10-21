@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <Compile Include="../../Source/Text/*.cs" Link="Linked/Text/%(Filename)%(Extension)" />
+    <Compile Include="../../Source/Layout/*.cs" Link="Linked/Layout/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

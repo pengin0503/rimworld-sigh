@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using RimWorld;
+using SimpleSigh.Layout;
+using SimpleSigh.Rendering;
 using SimpleSigh.Text;
 using UnityEngine;
 using Verse;
@@ -23,6 +25,14 @@ public class CompSignText : ThingComp
     private Color color;
     private float scale = MaxScale;
     private int version;
+
+    private Mesh textMesh;
+    private Material textMaterial;
+    private Vector3 textCenter;
+    private int builtVersion = -1;
+    private int builtAtlasVersion = -1;
+    private Rot4 builtRotation = Rot4.Invalid;
+    private bool missingGlyphs;
 
     public CompProperties_SignText Props => (CompProperties_SignText)props;
 
@@ -110,8 +120,52 @@ public class CompSignText : ThingComp
         }
     }
 
+    public override void PostDraw()
+    {
+        base.PostDraw();
+        Map map = parent.Map;
+        if (text.NullOrEmpty() || map == null || parent.Position.Fogged(map) || !TmpGlyphSource.TryCreate(out TmpGlyphSource glyphs))
+        {
+            return;
+        }
+        if (builtVersion != version || builtAtlasVersion != glyphs.AtlasVersion || builtRotation != parent.Rotation)
+        {
+            ReleaseMesh();
+            builtVersion = version;
+            builtAtlasVersion = glyphs.AtlasVersion;
+            builtRotation = parent.Rotation;
+            missingGlyphs = GlyphQuadBuilder.HasMissingGlyphs(text, glyphs);
+            SignTextRenderer.TryBuild(this, glyphs, out textMesh, out textMaterial, out textCenter);
+        }
+        if (textMesh != null)
+        {
+            SignTextRenderer.Draw(parent, textMesh, textMaterial, textCenter);
+        }
+    }
+
+    public override void PostDeSpawn(Map map, DestroyMode mode = DestroyMode.Vanish)
+    {
+        base.PostDeSpawn(map, mode);
+        ReleaseMesh();
+    }
+
     public override string CompInspectStringExtra()
     {
-        return text.NullOrEmpty() ? "SimpleSigh_NoText".Translate().ToString() : null;
+        if (text.NullOrEmpty())
+        {
+            return "SimpleSigh_NoText".Translate().ToString();
+        }
+        return missingGlyphs ? "SimpleSigh_MissingGlyphs".Translate().ToString() : null;
+    }
+
+    private void ReleaseMesh()
+    {
+        if (textMesh != null)
+        {
+            Object.Destroy(textMesh);
+            textMesh = null;
+        }
+        textMaterial = null;
+        builtVersion = -1;
     }
 }

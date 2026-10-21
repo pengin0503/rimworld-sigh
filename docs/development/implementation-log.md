@@ -29,3 +29,9 @@ Nothing in this log claims in-game success; in-game checks are `NOT RUN` unless 
 | D10 | Text size is a user scale in [0.3, 1.0] of the largest size that fits the panel | Text must stay inside the panel, so "bigger than fits" is not offered | UX only |
 | D11 | Copy/paste text gizmos (session clipboard, values only) | Spec M1 lists copy/move/deconstruct checks; cheap and avoids Thing references in statics | none |
 | D12 | Kept the plan's namespace `SimpleSigh.Text`; game-side files alias `Verse.Text` as `GameText` | Inside `SimpleSigh.*`, `Text` resolves to the namespace first | none |
+| D13 | World text = glyph quads from `UnityStubs.Gui.TextMeshProBackend` (medium UI font index) drawn with shader `World/WorldText` | UnityStubs' own `TMPro.TextMeshPro` builds world text exactly this way in 1.7; `UnityEngine.TextMesh` is an empty stub; GUI→RenderTexture behaviour lives in the (absent) backend implementation | renderer rewrite if the backend behaves differently in game |
+| D14 | Render queue 3000 | `Shaders.Map.xml`: Cutout 2900, LightOverlay 3100, FogOfWar 3175; WorldText default 3610 would glow at night and show through fog | visual only |
+| D15 | Glyph atlas is alpha coverage (not SDF) | `Shaders/World/WorldText.frag.glsl` uses `texture(_MainTex).a` as coverage | — |
+| D16 | Unknown glyphs → one `?` per user-perceived character + inspect-pane note; display-only NFC (か+゛→が) | Spec: unsupported glyphs must be identifiable, saved text unchanged | — |
+| D17 | Any glyph quad outside the padded panel is dropped (`ClipTo`) | Guarantees text never leaves the board even if a font metric is off | partially hidden text in edge cases |
+| D18 | `SignLayout.Fit` introduced in M1 (single-line); M2 extends it with wrapping | Plan's M2 interface; avoids a throwaway M1 fitter | none |

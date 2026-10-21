@@ -14,4 +14,5 @@
   <SimpleSigh_PasteTextDesc>この看板の文字・色・大きさを、コピーした内容に置き換えます。</SimpleSigh_PasteTextDesc>
   <SimpleSigh_Copied>看板の文字をコピーしました。</SimpleSigh_Copied>
   <SimpleSigh_NoText>まだ文字がありません。「文字を編集」で書き込めます。</SimpleSigh_NoText>
+  <SimpleSigh_MissingGlyphs>現在のゲームフォントで描画できない文字があり、「?」で表示されています。</SimpleSigh_MissingGlyphs>
 </LanguageData>

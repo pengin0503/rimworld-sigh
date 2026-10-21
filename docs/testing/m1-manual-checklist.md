@@ -32,6 +32,28 @@ see README) into `RimWorld/Mods/`, enable **Simple Sigh** after Core, and start 
 | P4 | Deconstruct the sign | No error; resources returned | NOT RUN |
 | P5 | Add mod to an existing save | Save loads; signs can be built | NOT RUN |
 
-## Rendering (Tasks 5–6) — see also Task 5/6 sections below
+## Rendering on the panel (Task 5)
 
-Filled in by Tasks 5 and 6.
+Implementation: `SignTextRenderer` builds glyph quads from the 1.7 text backend
+(`UnityStubs.Gui.TextMeshProBackend`, medium UI font), lays them out inside `panelRect` minus
+padding (`SignLayout`), drops any quad outside the panel (`GlyphQuadBuilder.ClipTo`), and draws one
+mesh with the `WorldText` shader at render queue 3000. Unit tests cover layout, clipping, glyph
+replacement and UV orientation; the actual pixels have **not** been seen in game.
+
+| # | Case | Expected | Status |
+| --- | --- | --- | --- |
+| R1 | `研究室` on wood sign, normal zoom | Japanese glyphs legible, centred on the light panel, not floating | NOT RUN |
+| R2 | `Wood A-12`, `発電設備 24h` | Shrinks to panel width, stays inside panel | NOT RUN |
+| R3 | 64 × `W` | Very small but inside the panel | NOT RUN |
+| R4 | Zoom fully in / fully out | Text scales with the sign (world space), stays on panel | NOT RUN |
+| R5 | UI scale 100 % and 125 % | No change to world text placement | NOT RUN |
+| R6 | Text orientation | Reads left→right, not mirrored or upside down (UV orientation copied from UnityStubs TextMeshPro) | NOT RUN |
+| R7 | Night / dark room | Text darkens with the map (queue 3000 < LightOverlay 3100) | NOT RUN |
+| R8 | Fogged cell | Text not drawn | NOT RUN |
+| R9 | Pawn walking in front of the sign | Pawn not hidden behind text | NOT RUN |
+| R10 | Language English with Japanese text | If the English font atlas lacks CJK, `?` marks appear and the inspect pane says so (not silently blank) | NOT RUN |
+| R11 | Colour change in editor | Text colour on panel updates once | NOT RUN |
+| R12 | Size slider 30 % | Smaller centred text | NOT RUN |
+
+Known risk: whether the 1.7 font atlas contains Japanese glyphs when the game language is not Japanese
+is decided by the game's text backend implementation, which is not in the reference assemblies.
