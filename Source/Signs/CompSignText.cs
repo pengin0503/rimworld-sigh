@@ -9,8 +9,8 @@ using Verse;
 namespace SimpleSigh.Signs;
 
 /// <summary>
-/// Stores one sign's text, colour and size, saves them, and offers the edit gizmos.
-/// Every visible change bumps <see cref="Version"/> so render caches can rebuild once.
+/// Stores one sign's text, colour and size, saves them, offers the edit gizmos and draws the
+/// cached text mesh. The render cache keys on the values themselves, so it rebuilds once per change.
 /// </summary>
 public class CompSignText : ThingComp
 {
@@ -24,15 +24,8 @@ public class CompSignText : ThingComp
     private string text = string.Empty;
     private Color color;
     private float scale = MaxScale;
-    private int version;
 
-    private Mesh textMesh;
-    private Material textMaterial;
-    private Vector3 textCenter;
-    private int builtVersion = -1;
-    private int builtAtlasVersion = -1;
-    private Rot4 builtRotation = Rot4.Invalid;
-    private bool missingGlyphs;
+    private readonly SignRenderCache renderCache = new SignRenderCache();
 
     public CompProperties_SignText Props => (CompProperties_SignText)props;
 
@@ -42,8 +35,6 @@ public class CompSignText : ThingComp
 
     /// <summary>User text size: 1 = largest size that fits the panel, smaller values shrink the text.</summary>
     public float Scale => scale;
-
-    public int Version => version;
 
     public override void Initialize(CompProperties props)
     {
@@ -63,7 +54,6 @@ public class CompSignText : ThingComp
         text = newText;
         color = newColor;
         scale = newScale;
-        version++;
     }
 
     public override void PostExposeData()
@@ -79,7 +69,6 @@ public class CompSignText : ThingComp
             // the renderer shrinks it to fit instead.
             text = SignTextCodec.Decode(stored);
             scale = Mathf.Clamp(scale, MinScale, MaxScale);
-            version++;
         }
     }
 
@@ -128,44 +117,47 @@ public class CompSignText : ThingComp
         {
             return;
         }
-        if (builtVersion != version || builtAtlasVersion != glyphs.AtlasVersion || builtRotation != parent.Rotation)
+        SignRenderCache.BuiltText built = renderCache.Get(this, glyphs);
+        if (built != null)
         {
-            ReleaseMesh();
-            builtVersion = version;
-            builtAtlasVersion = glyphs.AtlasVersion;
-            builtRotation = parent.Rotation;
-            missingGlyphs = GlyphQuadBuilder.HasMissingGlyphs(text, glyphs);
-            SignTextRenderer.TryBuild(this, glyphs, out textMesh, out textMaterial, out textCenter);
-        }
-        if (textMesh != null)
-        {
-            SignTextRenderer.Draw(parent, textMesh, textMaterial, textCenter);
+            SignTextRenderer.Draw(parent, built.Mesh, built.Material, built.LocalCenter);
         }
     }
 
     public override void PostDeSpawn(Map map, DestroyMode mode = DestroyMode.Vanish)
     {
         base.PostDeSpawn(map, mode);
-        ReleaseMesh();
+        renderCache.Release();
+    }
+
+    public override void PostDestroy(DestroyMode mode, Map previousMap)
+    {
+        base.PostDestroy(mode, previousMap);
+        renderCache.Release();
+    }
+
+    public override void Notify_MapRemoved()
+    {
+        base.Notify_MapRemoved();
+        renderCache.Release();
     }
 
     public override string CompInspectStringExtra()
     {
+        var lines = new List<string>();
         if (text.NullOrEmpty())
         {
-            return "SimpleSigh_NoText".Translate().ToString();
+            lines.Add("SimpleSigh_NoText".Translate());
         }
-        return missingGlyphs ? "SimpleSigh_MissingGlyphs".Translate().ToString() : null;
-    }
-
-    private void ReleaseMesh()
-    {
-        if (textMesh != null)
+        else if (renderCache.MissingGlyphs)
         {
-            Object.Destroy(textMesh);
-            textMesh = null;
+            lines.Add("SimpleSigh_MissingGlyphs".Translate());
         }
-        textMaterial = null;
-        builtVersion = -1;
+        if (Prefs.DevMode)
+        {
+            RenderCacheStats stats = SignRenderCache.Stats;
+            lines.Add($"[dev] Simple Sigh render cache: builds {stats.Builds}, releases {stats.Releases}, live {stats.Live}, registered {SignRenderCache.RegisteredCount}");
+        }
+        return lines.Count == 0 ? null : string.Join("\n", lines);
     }
 }

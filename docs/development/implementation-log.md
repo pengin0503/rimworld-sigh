@@ -35,3 +35,7 @@ Nothing in this log claims in-game success; in-game checks are `NOT RUN` unless 
 | D16 | Unknown glyphs → one `?` per user-perceived character + inspect-pane note; display-only NFC (か+゛→が) | Spec: unsupported glyphs must be identifiable, saved text unchanged | — |
 | D17 | Any glyph quad outside the padded panel is dropped (`ClipTo`) | Guarantees text never leaves the board even if a font metric is off | partially hidden text in edge cases |
 | D18 | `SignLayout.Fit` introduced in M1 (single-line); M2 extends it with wrapping | Plan's M2 interface; avoids a throwaway M1 fitter | none |
+| D19 | Render cache keyed by values (text, RGBA, size, rotation, atlas version, font, panel geometry hash) instead of a version counter | Loading or future code paths cannot forget to bump a counter; key equality is unit-tested | none |
+| D20 | Mesh release on `PostDeSpawn`, `PostDestroy`, `Notify_MapRemoved` (`notifyMapRemoved=true`), and a `GameComponent` ctor calling `ReleaseAll` | 1.7 `ThingWithComps.Notify_MyMapRemoved` only notifies comps when `def.notifyMapRemoved`; `Game.FillComponents`/load create one GameComponent per game; old games' things are never despawned | GPU memory leak if a path is missed |
+| D21 | Materials come from vanilla `MaterialPool` (never destroyed by us) | Keys are quantised Color32 + atlas + shader + queue, so pool growth is bounded by distinct colours | none |
+| D22 | Dev-mode inspect line shows cache counters | Plan Task 6 asks for debug-only instrumentation; dev mode is the in-game equivalent | none |

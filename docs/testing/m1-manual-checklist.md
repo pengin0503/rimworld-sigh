@@ -57,3 +57,23 @@ replacement and UV orientation; the actual pixels have **not** been seen in game
 
 Known risk: whether the 1.7 font atlas contains Japanese glyphs when the game language is not Japanese
 is decided by the game's text backend implementation, which is not in the reference assemblies.
+
+## Cache lifecycle (Task 6)
+
+Unit-tested (pure `SignRenderSlot`/`SignRenderKey`): 10 000 unchanged frames → 1 build; any change of
+text, colour, size, rotation, atlas version, font or panel geometry → exactly one rebuild with the old
+mesh released; release is idempotent; "nothing to draw" is cached. In game, enable **Dev mode** and select
+a sign: the inspect pane shows `[dev] Simple Sigh render cache: builds / releases / live / registered`.
+
+| # | Case | Expected | Status |
+| --- | --- | --- | --- |
+| C1 | One sign with text left alone for 10 in-game minutes | `builds` does not increase | NOT RUN |
+| C2 | Edit text once / colour once | `builds` +1 each, `live` unchanged | NOT RUN |
+| C3 | 20 signs on screen, then 100+ signs | `live` = number of drawn signs with text; no growth while idle; FPS noted | NOT RUN |
+| C4 | Minify a sign | `live` −1 (PostDeSpawn) ; reinstall → same text redrawn, `live` +1 | NOT RUN |
+| C5 | Deconstruct / destroy a sign | `live` −1 | NOT RUN |
+| C6 | Load another save | `live` restarts from the new game's signs (GameComponent cleanup) | NOT RUN |
+| C7 | Abandon / remove a map with signs | `live` drops (notifyMapRemoved) | NOT RUN |
+| C8 | Save → load | Identical text drawn; no stale material | NOT RUN |
+
+Figures for C1–C3 must be measured in game; none were invented here.

@@ -271,6 +271,23 @@ class SignCompTests(unittest.TestCase):
         self.assertEqual(props.findtext("maxElements"), "64")
         self.assertEqual(props.findtext("multiline"), "false")
 
+    def sign_defs(self):
+        for d in all_thing_defs():
+            if d.get("Abstract") == "True" or not d.findtext("defName"):
+                continue
+            resolved = thing_def(d.findtext("defName"))
+            comps = resolved.find("comps")
+            if comps is not None and any(li.get("Class") == self.PROPS for li in comps):
+                yield resolved
+
+    def test_sign_defs_enable_realtime_draw_and_map_removal_cleanup(self):
+        """PostDraw only runs for realtime drawers; notifyMapRemoved lets the comp free its mesh."""
+        signs = list(self.sign_defs())
+        self.assertTrue(signs)
+        for sign in signs:
+            self.assertEqual(sign.findtext("drawerType"), "MapMeshAndRealTime")
+            self.assertEqual(sign.findtext("notifyMapRemoved"), "true")
+
     def test_panel_rects_lie_on_untinted_panel(self):
         """Text is placed inside panelRect; that area must be the light, untinted panel."""
         for d in all_thing_defs():
