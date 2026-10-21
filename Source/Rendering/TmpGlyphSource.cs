@@ -35,18 +35,33 @@ public sealed class TmpGlyphSource : IGlyphSource
 
     private static TmpGlyphSource cached;
 
-    /// <summary>Returns the shared source for the current backend and font; allocates only when either changes.</summary>
+    private int metricsAtlasVersion;
+
+    /// <summary>Shared source for the game's current text backend and the sign font.</summary>
     public static bool TryCreate(out TmpGlyphSource source)
     {
+        return TryCreateFor(TextMeshProBackend.Current, SignFontIndex, out source);
+    }
+
+    /// <summary>
+    /// Returns the cached source while backend, font and atlas version are unchanged (no allocation in the
+    /// draw loop). A new atlas version can mean new font data (e.g. after a language switch), so the font
+    /// metrics are read again then.
+    /// </summary>
+    public static bool TryCreateFor(ITextMeshProBackend backend, int fontIndex, out TmpGlyphSource source)
+    {
         source = null;
-        ITextMeshProBackend backend = TextMeshProBackend.Current;
-        int fontIndex = SignFontIndex;
-        if (cached != null && ReferenceEquals(cached.backend, backend) && cached.fontIndex == fontIndex)
+        if (backend == null)
+        {
+            return false;
+        }
+        if (cached != null && ReferenceEquals(cached.backend, backend) && cached.fontIndex == fontIndex
+            && cached.metricsAtlasVersion == backend.AtlasVersion)
         {
             source = cached;
             return true;
         }
-        if (backend == null || !backend.TryGetFontMetrics(fontIndex, out TmpFontMetrics metrics) || !metrics.found)
+        if (!backend.TryGetFontMetrics(fontIndex, out TmpFontMetrics metrics) || !metrics.found)
         {
             return false;
         }
@@ -60,7 +75,7 @@ public sealed class TmpGlyphSource : IGlyphSource
         {
             return false;
         }
-        source = cached = new TmpGlyphSource(backend, fontIndex, lineHeight);
+        source = cached = new TmpGlyphSource(backend, fontIndex, lineHeight) { metricsAtlasVersion = backend.AtlasVersion };
         return true;
     }
 

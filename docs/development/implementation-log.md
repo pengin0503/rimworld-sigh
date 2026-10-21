@@ -49,3 +49,16 @@ Nothing in this log claims in-game success; in-game checks are `NOT RUN` unless 
 | D30 | Allocation-free cache hit path (`TryGet`) | Capturing lambda allocated per sign per frame; spec lists continuous GC as a release blocker | none |
 | D31 | Offline preview tool (`tools/preview`) | Visual check of panel placement per def/rotation without the game; output clearly labelled offline | none |
 | D32 | Ship the Release DLL; `IncludeSourceRevisionInInformationalVersion=false`, `Deterministic=true` | The SDK baked `1.0.0+<commit>` into the DLL, so it changed on every commit (found when verify.sh flagged the committed DLL as stale) | none |
+| D33 | `TmpGlyphSource` re-reads font metrics when the backend's atlas version changes; `TryCreateFor(backend, font)` is testable with a fake `ITextMeshProBackend` in the smoke harness | Final review: metrics were cached forever, so a language/font switch could leave a stale line height (text clipped). Mutation-verified test | none |
+
+## Final review (M1 + M2) — self-review
+
+Subagents were not allowed for this task, so the whole-branch review was done by the implementer
+(weaker than an independent reviewer). Findings:
+
+- Important, fixed: stale font metrics after an atlas/font change (D33).
+- Important, fixed earlier in M2 Task 4: per-frame closure allocation; size-slider dead zone.
+- Minor, deferred: with several signs selected, "Edit text" opens the editor for one sign only and "Copy text" posts one message per sign (vanilla `alsoClickIfOtherInGroupClicked` default); "Paste text" correctly pastes into all.
+- Minor, deferred: the multi-line text area has no scroll bar for very long notices (256 characters still fit in the 150 px box at normal UI scale, but not verified in game).
+- Minor, deferred: if the game's text backend replaced the atlas `Texture2D` object on every atlas version, `MaterialPool` would keep one material per colour per atlas texture. UnityStubs' `Font.material` caches the atlas texture once, which suggests the texture object is stable; unverified in game.
+- Declined to judge (out of scope by spec): emoji/complex scripts, 3×1 boards ("後に3×1"), side-view wall art, uninstall from existing saves.

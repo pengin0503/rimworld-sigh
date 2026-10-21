@@ -103,6 +103,29 @@ public static class Program
             File.Delete(file);
         });
 
+        Check("TmpGlyphSource adapts the 1.7 ITextMeshProBackend (fake backend)", () =>
+        {
+            var backend = new FakeTextBackend();
+            Require(Rendering.TmpGlyphSource.TryCreateFor(backend, 2, out Rendering.TmpGlyphSource source), "no source");
+            Require(source.LineHeight == 38f, $"line height {source.LineHeight} != ascent - descent");
+            Require(source.TryGetGlyph('A', out Layout.GlyphMetrics a) && a.Found && a.AdvanceX == 18f && a.Y1 == 34f && a.V0 == 0.2f, "glyph not mapped");
+            Require(!source.TryGetGlyph('☃', out _), "missing glyph reported as found");
+            Require(Rendering.TmpGlyphSource.TryCreateFor(backend, 2, out Rendering.TmpGlyphSource again) && ReferenceEquals(source, again), "source not reused");
+            Layout.SignTextLayout.Result layout = Layout.SignTextLayout.Build("研究室", new Layout.PanelPlacement(0f, 0.1f, 0.72f, 0.44f), 0.08f, false, 1f, source);
+            Require(layout.Quads.Count == 3, $"expected 3 quads, got {layout.Quads.Count}");
+        });
+
+        Check("TmpGlyphSource re-reads font metrics when the atlas version changes (e.g. language switch)", () =>
+        {
+            var backend = new FakeTextBackend();
+            Rendering.TmpGlyphSource.TryCreateFor(backend, 2, out Rendering.TmpGlyphSource before);
+            backend.Ascent = 40f;
+            backend.AtlasVersion++;
+            Rendering.TmpGlyphSource.TryCreateFor(backend, 2, out Rendering.TmpGlyphSource after);
+            Require(after.LineHeight == 48f, $"stale line height {after.LineHeight} after atlas change");
+            Require(after.AtlasVersion == backend.AtlasVersion, "atlas version not tracked");
+        });
+
         Console.WriteLine(failures == 0 ? "SMOKE PASS (assembly/XML only; the game was not run)" : $"SMOKE FAIL ({failures})");
         return failures == 0 ? 0 : 1;
     }
