@@ -18,3 +18,10 @@ GameReferences/
 .worktrees/
 __pycache__/
 .pytest_cache/
+
+# Guard by filename too, even if extracted outside the usual folder.
+Assembly-CSharp.dll
+Waylith.dll
+UnityStubs.dll
+0Harmony.dll
+netstandard.dll
