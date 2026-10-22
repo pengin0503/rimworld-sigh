@@ -21,16 +21,16 @@ public static class SignTextLayout
 
     public sealed class Result
     {
-        public static readonly Result Empty = new Result(new List<GlyphQuad>(), 0f, 0f, 0f, true, 0);
+        public static readonly Result Empty = new Result(new List<GlyphQuad>(), 0f, 0f, 0f, true, Array.Empty<string>());
 
-        public Result(List<GlyphQuad> quads, float centerX, float centerZ, float lineHeight, bool fits, int lineCount)
+        public Result(List<GlyphQuad> quads, float centerX, float centerZ, float lineHeight, bool fits, IReadOnlyList<string> lines)
         {
             Quads = quads;
             CenterX = centerX;
             CenterZ = centerZ;
             LineHeight = lineHeight;
             Fits = fits;
-            LineCount = lineCount;
+            Lines = lines;
         }
 
         /// <summary>Quads in world units, relative to the panel centre (X east, Y = world Z north).</summary>
@@ -47,7 +47,9 @@ public static class SignTextLayout
         public bool Fits { get; }
 
         /// <summary>Displayed rows, including rows made by automatic wrapping.</summary>
-        public int LineCount { get; }
+        public IReadOnlyList<string> Lines { get; }
+
+        public int LineCount => Lines.Count;
     }
 
     /// <param name="padding">Gap between panel edge and text as a fraction of the panel's shorter side.</param>
@@ -55,7 +57,8 @@ public static class SignTextLayout
     /// <param name="userScale">User text size in (0, 1]: fraction of the largest size that fits.</param>
     /// <param name="autoWrap">
     /// Single-line signs only: show the text on several rows when that makes it clearly larger (#5).
-    /// Rows break between words or Japanese characters, never inside a Latin word; the text itself is unchanged.
+    /// Rows break between words or Japanese characters, never inside a Latin word, and are balanced in
+    /// length ("立入" / "禁止"); the text itself is unchanged.
     /// </param>
     public static Result Build(string text, PanelPlacement panel, float padding, bool multiline, float userScale, IGlyphSource glyphs,
         bool autoWrap = true)
@@ -78,16 +81,18 @@ public static class SignTextLayout
         Func<string, float> measure = s => GlyphQuadBuilder.MeasureLine(s, glyphs) * pixelsToWorld;
         bool wrap = multiline;
         bool allowWordBreaks = true;
+        bool balance = false;
         SignLayoutResult layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, MinFitScale, wrap: multiline);
         if (!multiline && autoWrap)
         {
             SignLayoutResult wrapped = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, MinFitScale,
-                wrap: true, allowWordBreaks: false);
+                wrap: true, allowWordBreaks: false, balanceLines: true);
             if (wrapped.Fits && (!layout.Fits || wrapped.Scale > layout.Scale * AutoWrapMinGain))
             {
                 layout = wrapped;
                 wrap = true;
                 allowWordBreaks = false;
+                balance = true;
             }
         }
         if (userScale < 1f && layout.Fits)
@@ -96,12 +101,12 @@ public static class SignTextLayout
             // rules so smaller text can use longer lines.
             float target = Math.Max(MinFitScale, layout.Scale * userScale);
             layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, Math.Min(MinFitScale, target), target,
-                wrap, allowWordBreaks);
+                wrap, allowWordBreaks, balance);
         }
         float lineHeight = innerHeight * layout.Scale;
         // The padding is the layout margin; ink beyond a glyph's line box may use it, but never leaves the panel.
         List<GlyphQuad> quads = GlyphQuadBuilder.ClipTo(
             GlyphQuadBuilder.Build(layout.Lines, glyphs, lineHeight), panel.Width * 0.5f, panel.Height * 0.5f);
-        return new Result(quads, panel.CenterX, panel.CenterZ, lineHeight, layout.Fits, layout.Lines.Count);
+        return new Result(quads, panel.CenterX, panel.CenterZ, lineHeight, layout.Fits, layout.Lines);
     }
 }

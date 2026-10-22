@@ -50,9 +50,13 @@ public static class SignLayout
     /// False to never break inside a Latin word (or a run of characters that must stay together):
     /// lines then end only at break opportunities and the scale shrinks until every word fits.
     /// </param>
+    /// <param name="balanceLines">
+    /// Wrapped text keeps the chosen scale and line count but evens out line lengths
+    /// ("立入" / "禁止" instead of "立入禁" / "止"). Meant for short labels.
+    /// </param>
     public static SignLayoutResult Fit(string text, float availableWidth, float availableHeight,
         Func<string, float> measureWidth, float lineHeight, float minScale, float maxScale = 1f, bool wrap = true,
-        bool allowWordBreaks = true)
+        bool allowWordBreaks = true, bool balanceLines = false)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -67,7 +71,7 @@ public static class SignLayout
 
         if (TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, maxScale, wrap, allowWordBreaks, out List<string> lines))
         {
-            return new SignLayoutResult(lines, maxScale, true);
+            return Fitted(paragraphs, lines, availableWidth, maxScale, wrap && balanceLines, allowWordBreaks);
         }
         if (!TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, minScale, wrap, allowWordBreaks, out lines))
         {
@@ -90,7 +94,39 @@ public static class SignLayout
                 failing = middle;
             }
         }
-        return new SignLayoutResult(best, fitting, true);
+        return Fitted(paragraphs, best, availableWidth, fitting, wrap && balanceLines, allowWordBreaks);
+    }
+
+    private static SignLayoutResult Fitted(List<Element[]> paragraphs, List<string> lines, float width, float scale, bool balance, bool allowWordBreaks)
+    {
+        if (balance && lines.Count > 1)
+        {
+            lines = Balance(paragraphs, width / scale, lines.Count, allowWordBreaks);
+        }
+        return new SignLayoutResult(lines, scale, true);
+    }
+
+    /// <summary>The narrowest wrap width that still needs no more than <paramref name="lineCount"/> lines.</summary>
+    private static List<string> Balance(List<Element[]> paragraphs, float lineWidth, int lineCount, bool allowWordBreaks)
+    {
+        float narrow = 0f;
+        float wide = lineWidth;
+        List<string> best = Wrap(paragraphs, lineWidth, out _, out _);
+        for (int step = 0; step < SearchSteps; step++)
+        {
+            float middle = (narrow + wide) * 0.5f;
+            List<string> lines = Wrap(paragraphs, middle, out _, out bool forced);
+            if (lines.Count <= lineCount && (allowWordBreaks || !forced))
+            {
+                wide = middle;
+                best = lines;
+            }
+            else
+            {
+                narrow = middle;
+            }
+        }
+        return best;
     }
 
     /// <summary>Lines wrapped for a fixed scale; <see cref="SignLayoutResult.Fits"/> reports only the width check.</summary>

@@ -61,6 +61,27 @@ public class SignLegibilityTests
 
     [Theory]
     [MemberData(nameof(SingleLinePanels))]
+    public void AutomaticRowsAreBalanced(string panelName)
+    {
+        // Greedy filling would give "立入禁" + "止"; the same size with even rows reads better.
+        SignPanels.Panel panel = SignPanels.Get(panelName);
+        Assert.Equal(new[] { "立入", "禁止" }, Auto("立入禁止", panel).Lines);
+        Assert.Equal(new[] { "研究施", "設入口" }, Auto("研究施設入口", panel).Lines);
+        SignTextLayout.Result fiveKanji = Auto("食料保管庫", panel);
+        Assert.Equal(2, fiveKanji.LineCount);
+        Assert.True(System.Math.Abs(fiveKanji.Lines[0].Length - fiveKanji.Lines[1].Length) <= 1);
+    }
+
+    [Fact]
+    public void BalancingKeepsTheSize()
+    {
+        SignPanels.Panel panel = SignPanels.Get("BasicSign");
+        float balanced = Auto("立入禁止", panel).LineHeight;
+        Assert.Equal(Auto("研究施設入口", panel).LineHeight, balanced, 5);
+    }
+
+    [Theory]
+    [MemberData(nameof(SingleLinePanels))]
     public void AutomaticWrappingNeverMakesTextSmaller(string panelName)
     {
         SignPanels.Panel panel = SignPanels.Get(panelName);
