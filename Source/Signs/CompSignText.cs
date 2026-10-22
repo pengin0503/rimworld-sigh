@@ -66,6 +66,11 @@ public class CompSignText : ThingComp
         color = newColor;
         scale = newScale;
         autoWrap = newAutoWrap;
+        if (text.Length == 0)
+        {
+            // An empty sign is never drawn, so the draw path would not replace the old mesh: free it now.
+            renderCache.Release();
+        }
         if (colorChanged)
         {
             SyncGlowColor();
