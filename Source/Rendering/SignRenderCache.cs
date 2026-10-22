@@ -80,7 +80,7 @@ public sealed class SignRenderCache
             graphic?.drawSize ?? Vector2.zero, graphic?.DrawOffset(rot) ?? Vector3.zero);
         Color32 c = sign.TextColor;
         uint rgba = ((uint)c.r << 24) | ((uint)c.g << 16) | ((uint)c.b << 8) | c.a;
-        return new SignRenderKey(sign.Text, rgba, sign.Scale, rot.AsInt, glyphs.Generation, glyphs.SourceId, layoutHash);
+        return new SignRenderKey(sign.Text, rgba, sign.Scale, rot.AsInt, glyphs.Generation, glyphs.SourceId, layoutHash, sign.AutoWrap);
     }
 
     public sealed class BuiltText

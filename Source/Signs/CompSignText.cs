@@ -20,10 +20,12 @@ public class CompSignText : ThingComp
     private const string TextKey = "simpleSighText";
     private const string ColorKey = "simpleSighColor";
     private const string ScaleKey = "simpleSighScale";
+    private const string AutoWrapKey = "simpleSighAutoWrap";
 
     private string text = string.Empty;
     private Color color;
     private float scale = MaxScale;
+    private bool autoWrap = true;
 
     private readonly SignRenderCache renderCache = new SignRenderCache();
     private CompPowerTrader powerComp;
@@ -38,6 +40,12 @@ public class CompSignText : ThingComp
     /// <summary>User text size: 1 = largest size that fits the panel, smaller values shrink the text.</summary>
     public float Scale => scale;
 
+    /// <summary>
+    /// Single-line signs: show the text on several rows when that makes it clearly larger (#5).
+    /// On by default, also for signs from saves made before the option existed.
+    /// </summary>
+    public bool AutoWrap => autoWrap;
+
     public override void Initialize(CompProperties props)
     {
         base.Initialize(props);
@@ -45,11 +53,11 @@ public class CompSignText : ThingComp
     }
 
     /// <summary>Stores already-validated values. Callers must validate text through <see cref="SignEditSession"/>.</summary>
-    public void Apply(string newText, Color newColor, float newScale)
+    public void Apply(string newText, Color newColor, float newScale, bool newAutoWrap)
     {
         newText ??= string.Empty;
         newScale = Mathf.Clamp(newScale, MinScale, MaxScale);
-        if (newText == text && newColor == color && Mathf.Approximately(newScale, scale))
+        if (newText == text && newColor == color && Mathf.Approximately(newScale, scale) && newAutoWrap == autoWrap)
         {
             return;
         }
@@ -57,6 +65,7 @@ public class CompSignText : ThingComp
         text = newText;
         color = newColor;
         scale = newScale;
+        autoWrap = newAutoWrap;
         if (colorChanged)
         {
             SyncGlowColor();
@@ -77,6 +86,7 @@ public class CompSignText : ThingComp
         Scribe_Values.Look(ref stored, TextKey);
         Scribe_Values.Look(ref color, ColorKey, Props.defaultColor);
         Scribe_Values.Look(ref scale, ScaleKey, MaxScale);
+        Scribe_Values.Look(ref autoWrap, AutoWrapKey, true);
         if (Scribe.mode == LoadSaveMode.LoadingVars)
         {
             // Saved text is never truncated, even if a later version lowers the limit;

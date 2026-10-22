@@ -102,7 +102,7 @@ public static class Program
             const string text = "研究室 C:\\new\n2行目  ";
             var comp = new CompSignText();
             comp.Initialize(new CompProperties_SignText { maxElements = 256, multiline = true });
-            comp.Apply(text, new UnityEngine.Color(0.62f, 0.12f, 0.10f, 1f), 0.5f);
+            comp.Apply(text, new UnityEngine.Color(0.62f, 0.12f, 0.10f, 1f), 0.5f, false);
             string file = Path.Combine(Path.GetTempPath(), "simplesigh-smoke-save.xml");
             Scribe.saver.InitSaving(file, "sign");
             comp.PostExposeData();
@@ -117,6 +117,7 @@ public static class Program
             Require(Text.SignTextCodec.Decode(stored.Replace("\\n", "\n")) == text, "round trip changed the text");
             Require(saved.SelectSingleNode("/sign/simpleSighColor") != null, "colour not written");
             Require(saved.SelectSingleNode("/sign/simpleSighScale")?.InnerText == "0.5", "scale not written");
+            Require(saved.SelectSingleNode("/sign/simpleSighAutoWrap")?.InnerText == "False", "auto wrap not written");
             File.Delete(file);
         });
 

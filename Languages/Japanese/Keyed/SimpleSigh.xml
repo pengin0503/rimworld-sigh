@@ -15,4 +15,6 @@
   <SimpleSigh_Copied>看板の文字をコピーしました。</SimpleSigh_Copied>
   <SimpleSigh_NoText>まだ文字がありません。「文字を編集」で書き込めます。</SimpleSigh_NoText>
   <SimpleSigh_MissingGlyphs>看板のフォントにない文字があり、「?」で表示されています（保存された文字はそのままです）。</SimpleSigh_MissingGlyphs>
+  <SimpleSigh_AutoWrap>長い文字を自動で折り返して大きく表示する</SimpleSigh_AutoWrap>
+  <SimpleSigh_LongTextHint>1×1の看板では長い文字は小さくなります。長い文には2×1の掲示板（複数行）がおすすめです。</SimpleSigh_LongTextHint>
 </LanguageData>

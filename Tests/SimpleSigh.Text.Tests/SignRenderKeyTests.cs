@@ -6,9 +6,9 @@ namespace SimpleSigh.Text.Tests;
 public class SignRenderKeyTests
 {
     private static SignRenderKey Key(string text = "研究室", uint color = 0x221C17FF, float scale = 1f, int rotation = 0,
-        int atlas = 1, int font = 2, int layout = 0)
+        int atlas = 1, int font = 2, int layout = 0, bool autoWrap = true)
     {
-        return new SignRenderKey(text, color, scale, rotation, atlas, font, layout);
+        return new SignRenderKey(text, color, scale, rotation, atlas, font, layout, autoWrap);
     }
 
     [Fact]
@@ -26,6 +26,7 @@ public class SignRenderKeyTests
     [InlineData("atlas")]
     [InlineData("font")]
     [InlineData("layout")]
+    [InlineData("autoWrap")]
     public void EveryVisibleInputChangesTheKey(string field)
     {
         SignRenderKey changed = field switch
@@ -36,6 +37,7 @@ public class SignRenderKeyTests
             "rotation" => Key(rotation: 1),
             "atlas" => Key(atlas: 2),
             "font" => Key(font: 1),
+            "autoWrap" => Key(autoWrap: false),
             _ => Key(layout: 7),
         };
         Assert.NotEqual(Key(), changed);
@@ -51,7 +53,7 @@ public class SignRenderKeyTests
         void Frame()
         {
             int layout = System.HashCode.Combine(0.1f, 0.2f, 0.08f, 1f, 0.9f);
-            Assert.True(slot.TryGet(new SignRenderKey(text, 0x221C17FF, 1f, 0, 1, 2, layout - layout), out _));
+            Assert.True(slot.TryGet(new SignRenderKey(text, 0x221C17FF, 1f, 0, 1, 2, layout - layout, true), out _));
         }
         Frame(); // first use initialises statics (HashCode seed, JIT); measure the steady state
         long before = System.GC.GetAllocatedBytesForCurrentThread();

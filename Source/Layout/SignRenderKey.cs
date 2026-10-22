@@ -5,7 +5,7 @@ namespace SimpleSigh.Layout;
 /// <summary>Everything that changes a sign's visible text. Any difference forces exactly one rebuild.</summary>
 public readonly struct SignRenderKey : IEquatable<SignRenderKey>
 {
-    public SignRenderKey(string text, uint rgba, float scale, int rotation, int glyphGeneration, int glyphSourceId, int layoutHash)
+    public SignRenderKey(string text, uint rgba, float scale, int rotation, int glyphGeneration, int glyphSourceId, int layoutHash, bool autoWrap)
     {
         Text = text ?? string.Empty;
         Rgba = rgba;
@@ -14,6 +14,7 @@ public readonly struct SignRenderKey : IEquatable<SignRenderKey>
         GlyphGeneration = glyphGeneration;
         GlyphSourceId = glyphSourceId;
         LayoutHash = layoutHash;
+        AutoWrap = autoWrap;
     }
 
     public string Text { get; }
@@ -33,13 +34,17 @@ public readonly struct SignRenderKey : IEquatable<SignRenderKey>
     /// <summary>Hash of panel geometry inputs (panel rects, padding, draw size, draw offset).</summary>
     public int LayoutHash { get; }
 
+    /// <summary>Per-sign automatic wrapping of single-line text.</summary>
+    public bool AutoWrap { get; }
+
     public bool Equals(SignRenderKey other)
     {
         return Text == other.Text && Rgba == other.Rgba && Scale.Equals(other.Scale) && Rotation == other.Rotation
-            && GlyphGeneration == other.GlyphGeneration && GlyphSourceId == other.GlyphSourceId && LayoutHash == other.LayoutHash;
+            && GlyphGeneration == other.GlyphGeneration && GlyphSourceId == other.GlyphSourceId && LayoutHash == other.LayoutHash
+            && AutoWrap == other.AutoWrap;
     }
 
     public override bool Equals(object obj) => obj is SignRenderKey other && Equals(other);
 
-    public override int GetHashCode() => HashCode.Combine(Text, Rgba, Scale, Rotation, GlyphGeneration, GlyphSourceId, LayoutHash);
+    public override int GetHashCode() => HashCode.Combine(Text, Rgba, Scale, Rotation, GlyphGeneration, GlyphSourceId, LayoutHash, AutoWrap);
 }

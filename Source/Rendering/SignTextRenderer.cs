@@ -43,7 +43,7 @@ public static class SignTextRenderer
 
         PanelPlacement panel = PanelFor(sign, sign.parent.Rotation);
         CompProperties_SignText props = sign.Props;
-        SignTextLayout.Result layout = SignTextLayout.Build(sign.Text, panel, props.panelPadding, props.multiline, sign.Scale, glyphs);
+        SignTextLayout.Result layout = SignTextLayout.Build(sign.Text, panel, props.panelPadding, props.multiline, sign.Scale, glyphs, sign.AutoWrap);
         if (layout.Quads.Count == 0)
         {
             return false;

@@ -46,8 +46,13 @@ public static class SignLayout
     /// <param name="lineHeight">Line height at scale 1.</param>
     /// <param name="maxScale">Upper bound for the scale, e.g. the user's text size setting.</param>
     /// <param name="wrap">False for single-line signs: only explicit line breaks start new lines.</param>
+    /// <param name="allowWordBreaks">
+    /// False to never break inside a Latin word (or a run of characters that must stay together):
+    /// lines then end only at break opportunities and the scale shrinks until every word fits.
+    /// </param>
     public static SignLayoutResult Fit(string text, float availableWidth, float availableHeight,
-        Func<string, float> measureWidth, float lineHeight, float minScale, float maxScale = 1f, bool wrap = true)
+        Func<string, float> measureWidth, float lineHeight, float minScale, float maxScale = 1f, bool wrap = true,
+        bool allowWordBreaks = true)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -57,14 +62,14 @@ public static class SignLayout
         List<Element[]> paragraphs = Tokenize(text, measureWidth);
         if (availableWidth <= 0f || availableHeight <= 0f || lineHeight <= 0f)
         {
-            return new SignLayoutResult(Wrap(paragraphs, float.PositiveInfinity), minScale, false);
+            return new SignLayoutResult(Wrap(paragraphs, float.PositiveInfinity, out _, out _), minScale, false);
         }
 
-        if (TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, maxScale, wrap, out List<string> lines))
+        if (TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, maxScale, wrap, allowWordBreaks, out List<string> lines))
         {
             return new SignLayoutResult(lines, maxScale, true);
         }
-        if (!TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, minScale, wrap, out lines))
+        if (!TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, minScale, wrap, allowWordBreaks, out lines))
         {
             return new SignLayoutResult(lines, minScale, false);
         }
@@ -75,7 +80,7 @@ public static class SignLayout
         for (int step = 0; step < SearchSteps; step++)
         {
             float middle = (fitting + failing) * 0.5f;
-            if (TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, middle, wrap, out lines))
+            if (TryFitAt(paragraphs, availableWidth, availableHeight, lineHeight, middle, wrap, allowWordBreaks, out lines))
             {
                 fitting = middle;
                 best = lines;
@@ -96,7 +101,7 @@ public static class SignLayout
             return new SignLayoutResult(Array.Empty<string>(), scale, true);
         }
         List<Element[]> paragraphs = Tokenize(text, measureWidth);
-        List<string> lines = Wrap(paragraphs, availableWidth / scale);
+        List<string> lines = Wrap(paragraphs, availableWidth / scale, out _, out _);
         bool fits = true;
         foreach (string line in lines)
         {
@@ -105,24 +110,22 @@ public static class SignLayout
         return new SignLayoutResult(lines, scale, fits);
     }
 
-    private static bool TryFitAt(List<Element[]> paragraphs, float width, float height, float lineHeight, float scale, bool wrap, out List<string> lines)
+    private static bool TryFitAt(List<Element[]> paragraphs, float width, float height, float lineHeight, float scale, bool wrap,
+        bool allowWordBreaks, out List<string> lines)
     {
         float lineWidth = width / scale;
-        lines = Wrap(paragraphs, wrap ? lineWidth : float.PositiveInfinity, out float widest);
-        return Within(widest * scale, width) && Within(lines.Count * lineHeight * scale, height);
+        lines = Wrap(paragraphs, wrap ? lineWidth : float.PositiveInfinity, out float widest, out bool forcedBreak);
+        return (allowWordBreaks || !forcedBreak) && Within(widest * scale, width) && Within(lines.Count * lineHeight * scale, height);
     }
 
     private static bool Within(float value, float limit) => value <= limit * (1f + Tolerance);
 
-    private static List<string> Wrap(List<Element[]> paragraphs, float maxWidth)
-    {
-        return Wrap(paragraphs, maxWidth, out _);
-    }
-
-    private static List<string> Wrap(List<Element[]> paragraphs, float maxWidth, out float widest)
+    /// <param name="forcedBreak">True when a line had to end where no break is allowed (inside a word).</param>
+    private static List<string> Wrap(List<Element[]> paragraphs, float maxWidth, out float widest, out bool forcedBreak)
     {
         var lines = new List<string>();
         widest = 0f;
+        forcedBreak = false;
         foreach (Element[] paragraph in paragraphs)
         {
             if (paragraph.Length == 0)
@@ -143,7 +146,8 @@ public static class SignLayout
                 }
                 if (end < paragraph.Length)
                 {
-                    end = ChooseBreak(paragraph, start, end);
+                    end = ChooseBreak(paragraph, start, end, out bool forced);
+                    forcedBreak |= forced;
                 }
 
                 int visibleEnd = end;
@@ -168,8 +172,9 @@ public static class SignLayout
     /// <paramref name="overflow"/> is the first element that did not fit. Returns where the line ends:
     /// the last allowed break opportunity, or a character break adjusted for kinsoku.
     /// </summary>
-    private static int ChooseBreak(Element[] elements, int start, int overflow)
+    private static int ChooseBreak(Element[] elements, int start, int overflow, out bool forcedBreak)
     {
+        forcedBreak = false;
         for (int b = overflow; b > start; b--)
         {
             if (CanBreakBefore(elements, b))
@@ -177,6 +182,7 @@ public static class SignLayout
                 return b;
             }
         }
+        forcedBreak = true;
         int forced = overflow;
         while (forced - 1 > start && (IsNoLineStart(elements[forced]) || IsNoLineEnd(elements[forced - 1])))
         {

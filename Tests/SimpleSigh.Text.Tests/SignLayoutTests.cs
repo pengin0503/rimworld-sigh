@@ -115,6 +115,32 @@ public class SignLayoutTests
     }
 
     [Fact]
+    public void WithoutWordBreaksALatinWordStaysWholeAndTheTextShrinksInstead()
+    {
+        // "Refrigerator" is 6 units wide at scale 1; a 3 x 2 panel would allow scale 0.5 with a
+        // mid-word break, but the word must stay on one line, so the scale is limited by its width.
+        SignLayoutResult r = SignLayout.Fit("Refrigerator", 3f, 2f, Measure, 1f, 0.05f, allowWordBreaks: false);
+        Assert.True(r.Fits);
+        Assert.Equal(new[] { "Refrigerator" }, r.Lines);
+        Assert.Equal(0.5f, r.Scale, 4);
+    }
+
+    [Fact]
+    public void WithoutWordBreaksLatinStillWrapsAtSpaces()
+    {
+        SignLayoutResult r = SignLayout.Fit("Food Storage", 3.6f, 2f, Measure, 1f, 0.05f, allowWordBreaks: false);
+        Assert.Equal(new[] { "Food", "Storage" }, r.Lines);
+    }
+
+    [Fact]
+    public void WithoutWordBreaksJapaneseStillWrapsBetweenCharacters()
+    {
+        SignLayoutResult r = SignLayout.Fit("研究施設入口", 3f, 2f, Measure, 1f, 0.05f, allowWordBreaks: false);
+        Assert.Equal(new[] { "研究施", "設入口" }, r.Lines);
+        Assert.Equal(1f, r.Scale, 4);
+    }
+
+    [Fact]
     public void LatinWrapsAtSpacesAndDropsTheBreakingSpace()
     {
         // "Wood storage area" = 17 chars * 0.5 = 8.5 units; panel 5 wide, 2 tall.
