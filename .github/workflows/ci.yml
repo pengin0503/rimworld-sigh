@@ -1,8 +1,8 @@
 name: Simple Sigh CI
 
-# Game reference assemblies are intentionally not committed or fetched from
-# untrusted mirrors. Full 1.7 build/smoke checks remain local until a lawful,
-# private reference delivery mechanism or self-hosted runner is configured.
+# Game assemblies are never committed. The mod is compiled against the public
+# reference-only package Krafs.Rimworld.Ref (signatures, no game code). The
+# smoke test that loads real game assemblies, and every in-game check, remain local.
 on:
   pull_request:
     branches: [main]
@@ -52,9 +52,37 @@ jobs:
       - name: Run xUnit tests (no game DLLs required)
         run: dotnet test Tests/SimpleSigh.Text.Tests/SimpleSigh.Text.Tests.csproj --configuration Release --nologo --verbosity normal
 
+  mod-build:
+    name: Build SimpleSigh.dll against 1.7 reference assemblies
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      # Krafs.Rimworld.Ref contains signatures only (no game code). The pinned version is the
+      # same 1.7 build as the private reference ZIP; the Release build is deterministic.
+      - name: Build Release DLL (warnings are errors)
+        run: dotnet build Source/SimpleSigh.csproj --configuration Release --nologo -warnaserror
+      - name: Require the committed DLL to match the source
+        shell: bash
+        run: |
+          if ! git diff --quiet -- 1.7/Assemblies/SimpleSigh.dll; then
+            echo '::error::1.7/Assemblies/SimpleSigh.dll does not match a Release build of Source/. Rebuild it (tools/verify.sh) and commit it with the source change.'
+            exit 1
+          fi
+      - name: Compile check against the newest 1.7 reference assemblies
+        run: dotnet build Source/SimpleSigh.csproj --configuration Release --nologo -warnaserror -p:RimRefVersion=1.7.4985-unstable -p:OutputPath=$RUNNER_TEMP/latest-ref/
+
   packaging:
     name: Install-ready ZIP packaging
-    needs: [structure, unit-tests]
+    needs: [structure, unit-tests, mod-build]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -64,19 +92,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
-      - name: Reject stale compiled DLL in pull requests
-        if: github.event_name == 'pull_request'
-        shell: bash
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          git fetch --no-tags --depth=1 origin "$BASE_SHA" "$HEAD_SHA"
-          if ! git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- Source/ &&
-             git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- 1.7/Assemblies/SimpleSigh.dll; then
-            echo '::error::Source changed without rebuilding the shipped SimpleSigh.dll. Build against the legally obtained 1.7 references and commit the DLL before packaging.'
-            exit 1
-          fi
       - name: Verify runtime-only packaging
         run: python -m unittest discover -s Tests/PackagingTests -v
       - name: Create preview ZIP containing only mod files

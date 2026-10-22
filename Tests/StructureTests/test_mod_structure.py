@@ -371,6 +371,16 @@ class ProjectTests(unittest.TestCase):
             self.assertIn(name, refs)
             self.assertEqual(refs[name].findtext("Private"), "false", name)
 
+    def test_public_reference_package_is_pinned_and_compile_only(self):
+        """Krafs.Rimworld.Ref 1.7.4982-unstable is the game build the shipped DLL is reproduced from."""
+        packages = {p.get("Include"): p for p in self.project.iter("PackageReference")}
+        self.assertIn("Krafs.Rimworld.Ref", packages)
+        package = packages["Krafs.Rimworld.Ref"]
+        self.assertEqual(package.get("Version"), "$(RimRefVersion)")
+        self.assertEqual(self.prop("RimRefVersion"), "1.7.4982-unstable")
+        self.assertEqual(package.get("ExcludeAssets"), "runtime")
+        self.assertEqual(package.get("PrivateAssets"), "all")
+
     def test_no_harmony_reference_without_dependency(self):
         refs = {r.get("Include") for r in self.project.iter("Reference")}
         packages = {r.get("Include") for r in self.project.iter("PackageReference")}
