@@ -64,3 +64,26 @@ Subagents were not allowed for this task, so the whole-branch review was done by
 - Declined to judge (out of scope by spec): emoji/complex scripts, 3×1 boards ("後に3×1"), side-view wall art, uninstall from existing saves.
 | D34 | M3: `requiresPower` / `glowsInDark` / `syncGlowColor` on `CompProperties_SignText`; `SignVisibility` decides drawing and queue | 1.7 `CompPowerTrader.PowerOn`; `CompPowerTrader : IThingGlower` makes the vanilla glower follow power; queue 3150 = vanilla `TransparentPostLight` (after LightOverlay 3100, before FogOfWar 3175) | visual only |
 | D35 | Power loss hides text but keeps the mesh and the text | Restoring power needs no rebuild; spec requires the text to come back | small idle memory per unpowered sign |
+
+## Japanese glyphs (#4) and legibility (#5) — 2026-10-22
+
+Environment: cloud container with .NET SDK 10.0.402; **no** private `rimworld_DLL.zip`, no RimWorld
+executable. Every in-game check is `NOT RUN` (`docs/testing/japanese-and-legibility-checklist.md`).
+
+| # | Decision | Evidence / reason | Cost if wrong |
+| --- | --- | --- | --- |
+| D36 | Compile against the public reference package `Krafs.Rimworld.Ref` (pinned `1.7.4982-unstable`) unless `RIMWORLD_REFERENCE_DIR`/`RIMWORLD_GAME_DIR` is set | Its `Assembly-CSharp` 1.7.9787.38423 equals the private references (see the audit); building main against it reproduced the committed DLL byte for byte (sha256 `a7b25bfc…4d5a`). Package licence: "Owned by Ludeon Studios, who grants permission to use this package … for reference purposes" | none: local references still work |
+| D37 | CI builds the DLL, fails if the committed DLL differs, and compile-checks against the newest 1.7 package (4985) | Replaces the "Source changed but DLL did not" heuristic with an exact check | — |
+| D38 | Do **not** extend the game's TMP atlas (`ImGuiTextMeshProBackend`) through reflection/Harmony | Its private API changed across 1.7 builds: `BakeRange(baked, data, sb, lo, hi)` in 4977, `BakeRange(baked, data, lo, hi)` + `AllCharacters` in 4979–4984, `Bake(font, previous)` + `BakeGlyph(data, ch)` in 4985 (reference metadata). The world-text precedent (basalt991/world-feature-text-compat17) targets 4976 signatures | — |
+| D39 | Bundle BIZ UDPGothic Bold (SIL OFL 1.1, no Reserved Font Name, unmodified, 4.6 MB) and rasterize it in the mod | Covers JIS kanji, kana, Latin, full-width forms, Japanese punctuation; legibility-oriented UD design; licence allows bundling with the licence text | mod size |
+| D40 | Own TrueType parser + exact-area rasterizer (`Source/Fonts`) instead of a third-party DLL | Single assembly, no licence ambiguity, fully unit-testable offline. Output matches FreeType (no hinting) within 0.7 % mean / 2.6 % max relative ink difference over 120 glyphs at 48 px | glyf fonts only (no CFF) |
+| D41 | Mod-owned RGBA32 atlas (white, coverage in alpha), 48 px em, 512² growing to 2048², shelf packing with 2 px padding, partial `SetPixels32` + `Apply(false)` uploads | WorldText samples `.a` (D15); UnityStubs `Texture2D` has CPU storage and region upload. Row 0 / v = 0 at the bottom (Unity convention, which vanilla sprites rely on); the offline preview samples the atlas through the quad UVs with that convention and draws upright glyphs | if Waylith's `SetPixels32` row order differed, glyphs would be upside down (A10 in the checklist) |
+| D42 | Render key uses glyph *generation* + *source id*; glyphs are prepared before the key is taken on a cache miss | Adding glyphs never moves existing ones, so other signs keep their meshes; growth/Clear bump the generation. `TmpGlyphSource` gets a per-instance generation, fixing stale meshes after a backend swap with equal version numbers | one extra rebuild per atlas growth |
+| D43 | Clear the atlas when another game starts, without touching the texture there | GameComponent constructors may run while a game loads off the main thread; the next `Prepare` (draw path) uploads | — |
+| D44 | Font load or upload failure: log once, fall back to the game font for the rest of the session | Signs must never crash or spam the log | Japanese shows `?` in that case |
+| D45 | Single-line signs: per-sign automatic wrapping (default on, saved as `simpleSighAutoWrap`), used only when ≥ 3 % larger than one row, never inside a Latin word, rows balanced to the chosen size | Issue #5; numbers in `docs/testing/legibility.md`. Multi-line boards are unchanged (they may still split a long Latin word, as in M2) | — |
+| D46 | Glyph quads crossing the panel edge are trimmed (UVs cut proportionally) and clipped to the panel instead of the padded box | The old clip dropped whole characters whose ink exceeded the line box | — |
+| D47 | Empty text releases the sign's mesh immediately | Empty signs are never drawn, so the draw path could not replace it | — |
+
+Font provenance: `https://raw.githubusercontent.com/google/fonts/main/ofl/bizudpgothic/BIZUDPGothic-Bold.ttf`
+(sha256 `30eba52fc837e8b62c97d4b82e6706583149fb7294e3712dd71a655eaea80a90`) and `OFL.txt` from the same folder.

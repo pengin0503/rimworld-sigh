@@ -79,8 +79,10 @@
 - [ ] Verify final CI (structure 33 with Core refs if available, xUnit, packaging) and locally verify the game DLL build/smoke.
 - [ ] Merge only after sign readability + Japanese rendering are demonstrated in the real game. Then publish a fresh **test prerelease** (e.g. `v0.1.0-test.2`), keeping `v0.1.0-test.1` clearly marked defective.
 
-## Current status
+## Current status (updated 2026-10-22, branch `claude/vigilant-hypatia-q9f3y2`)
 
-- #5 (auto-readable layout): source logic + 2 regression tests done, CI xUnit passes; **binary is stale and game untested**.
-- #4 (Japanese font): diagnosed; dedicated Japanese font registration and actual glyph baking not implemented yet.
-- The previous release `v0.1.0-test.1` is unaffected. Do not point users to a newer binary until Task 2 and Task 4 pass.
+- Build: the mod now compiles against the public `Krafs.Rimworld.Ref` 1.7.4982 reference package (same build as the private ZIP; byte-identical DLL). CI rebuilds the DLL and rejects a stale one. The shipped DLL contains every change below.
+- #4 (Japanese font): **implemented differently from Task 2.** The game atlas's private baking API changed between 1.7 builds, so the mod bundles BIZ UDPGothic (OFL) and rasterizes glyphs into its own texture (`Source/Fonts`, `Source/Rendering/SignFont.cs`); fallback to the game font on failure. See implementation log D38–D44.
+- #5 (legibility): per-sign automatic wrapping with balanced rows, no split Latin words, boundary trimming; numbers in `docs/testing/legibility.md`.
+- Task 3: backend-swap invalidation (generation in the render key), empty-text mesh release and boundary trimming are done.
+- **Still open:** every in-game check (`docs/testing/japanese-and-legibility-checklist.md`), the smoke run with real assemblies, and a new test prerelease after those pass. `v0.1.0-test.1` remains defective for #4/#5.

@@ -18,8 +18,9 @@ public class Dialog_EditSign : Window
     private const float ButtonHeight = 35f;
 
     /// <summary>
-    /// Beyond this many characters a 1x1 sign's text drops below about a fifth of a cell even with
-    /// automatic wrapping (see docs/testing/legibility.md), so the editor suggests a notice board.
+    /// From seven characters on, a 1x1 sign's rows fall to about 0.16 cell or less even with automatic
+    /// wrapping (under 8 px at 1080p fully zoomed in; docs/testing/legibility.md), so the editor
+    /// suggests the 2x1 notice board.
     /// </summary>
     private const int LongTextHintElements = 6;
 
