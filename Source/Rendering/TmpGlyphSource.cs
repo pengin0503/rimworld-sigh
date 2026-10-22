@@ -8,18 +8,25 @@ namespace SimpleSigh.Rendering;
 /// <summary>
 /// Glyph metrics from RimWorld 1.7's text backend (<see cref="TextMeshProBackend"/>), the same
 /// source UnityStubs' TextMeshPro uses for world-space text. Font indices are the game's GUI fonts,
-/// so the sign can draw whatever glyphs the game's UI font atlas provides.
+/// so the sign can draw whatever glyphs the game's UI font atlas provides. That atlas bakes only a
+/// fixed character set (Japanese typed on a sign shows as "?"), so this is the fallback when the
+/// bundled <see cref="SignFont"/> cannot be used.
 /// </summary>
-public sealed class TmpGlyphSource : IGlyphSource
+public sealed class TmpGlyphSource : ISignGlyphs
 {
     private readonly ITextMeshProBackend backend;
     private readonly int fontIndex;
+
+    private static int nextGeneration;
 
     private TmpGlyphSource(ITextMeshProBackend backend, int fontIndex, float lineHeight)
     {
         this.backend = backend;
         this.fontIndex = fontIndex;
         LineHeight = lineHeight;
+        // A new instance means another backend object, font or atlas version: meshes built from the
+        // previous one may hold stale UVs even when the backend reports equal version numbers.
+        Generation = ++nextGeneration;
     }
 
     public float LineHeight { get; }
@@ -27,6 +34,10 @@ public sealed class TmpGlyphSource : IGlyphSource
     public int FontIndex => fontIndex;
 
     public int AtlasVersion => backend.AtlasVersion;
+
+    public int SourceId => fontIndex;
+
+    public int Generation { get; }
 
     public Texture2D Atlas => backend.GetAtlasTexture(fontIndex);
 
@@ -77,6 +88,11 @@ public sealed class TmpGlyphSource : IGlyphSource
         }
         source = cached = new TmpGlyphSource(backend, fontIndex, lineHeight) { metricsAtlasVersion = backend.AtlasVersion };
         return true;
+    }
+
+    /// <summary>The game atlas cannot be extended from here; missing characters are drawn as the replacement mark.</summary>
+    public void Prepare(string text)
+    {
     }
 
     public bool TryGetGlyph(char c, out GlyphMetrics glyph)

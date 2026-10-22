@@ -562,5 +562,37 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(found, [])
 
 
+class SignFontTests(unittest.TestCase):
+    """The bundled sign font (#4): a TrueType file the C# loader accepts, shipped with its OFL licence."""
+
+    FONT = os.path.join(ROOT, "Fonts", "BIZUDPGothic-Bold.ttf")
+    LICENCE = os.path.join(ROOT, "Fonts", "BIZUDPGothic-OFL.txt")
+
+    def test_font_is_a_truetype_outline_font(self):
+        with open(self.FONT, "rb") as f:
+            header = f.read(12)
+        self.assertEqual(struct.unpack(">I", header[:4])[0], 0x00010000)
+
+    def test_licence_is_ofl_without_reserved_font_name(self):
+        with open(self.LICENCE, encoding="utf-8") as f:
+            text = f.read()
+        self.assertIn("SIL Open Font License, Version 1.1", text)
+        self.assertIn("BIZ UDGothic Project Authors", text)
+        # A Reserved Font Name (declared after the copyright line) would restrict modified copies; none is declared.
+        copyright_statement = text.split("This Font Software is licensed")[0]
+        self.assertNotIn("Reserved Font Name", copyright_statement)
+
+    def test_loader_path_matches_the_bundled_file(self):
+        with open(os.path.join(ROOT, "Source", "Rendering", "SignFont.cs"), encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn('FontRelativePath = "Fonts/BIZUDPGothic-Bold.ttf"', source)
+
+    def test_mod_class_records_the_mod_folder(self):
+        with open(os.path.join(ROOT, "Source", "SimpleSighMod.cs"), encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn("class SimpleSighMod : Mod", source)
+        self.assertIn("SignFont.ModRootDir = content.RootDir", source)
+
+
 if __name__ == "__main__":
     unittest.main()

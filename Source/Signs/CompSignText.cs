@@ -128,7 +128,7 @@ public class CompSignText : ThingComp
         base.PostDraw();
         Map map = parent.Map;
         if (!SignVisibility.ShouldDrawText(text, Props.requiresPower, powerComp != null, powerComp != null && powerComp.PowerOn)
-            || map == null || parent.Position.Fogged(map) || !TmpGlyphSource.TryCreate(out TmpGlyphSource glyphs))
+            || map == null || parent.Position.Fogged(map) || !SignGlyphSources.TryGetCurrent(out ISignGlyphs glyphs))
         {
             return;
         }

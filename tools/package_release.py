@@ -2,8 +2,8 @@
 """Build a deterministic, installable Simple Sigh runtime-only ZIP.
 
 The ZIP contains a single top-level SimpleSigh/ directory. The packaged DLL
-comes from the checked-in 1.7/Assemblies/SimpleSigh.dll; no game DLLs or
-source/development files are included. This does not run RimWorld.
+comes from the checked-in 1.7/Assemblies/SimpleSigh.dll; the bundled sign font
+ships with its licence; no game DLLs or source/development files are included. This does not run RimWorld.
 """
 import argparse
 import hashlib
@@ -21,6 +21,8 @@ REQUIRED_FILES = frozenset({
     "Defs/ThingDefs/ElectronicSign.xml",
     "Languages/English/Keyed/SimpleSigh.xml",
     "Languages/Japanese/Keyed/SimpleSigh.xml",
+    "Fonts/BIZUDPGothic-Bold.ttf",
+    "Fonts/BIZUDPGothic-OFL.txt",
 })
 RUNTIME_RULES = (
     ("About/", frozenset({"About/About.xml"})),
@@ -28,6 +30,8 @@ RUNTIME_RULES = (
     ("Defs/", frozenset({".xml"})),
     ("Languages/", frozenset({".xml"})),
     ("Textures/", frozenset({".png"})),
+    # The bundled sign font and its SIL OFL 1.1 licence, which must travel with the font.
+    ("Fonts/", frozenset({"Fonts/BIZUDPGothic-Bold.ttf", "Fonts/BIZUDPGothic-OFL.txt"})),
 )
 ZIP_DATE = (2026, 1, 1, 0, 0, 0)
 

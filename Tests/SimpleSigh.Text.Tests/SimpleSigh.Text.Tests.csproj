@@ -12,6 +12,12 @@
   <ItemGroup>
     <Compile Include="../../Source/Text/*.cs" Link="Linked/Text/%(Filename)%(Extension)" />
     <Compile Include="../../Source/Layout/*.cs" Link="Linked/Layout/%(Filename)%(Extension)" />
+    <Compile Include="../../Source/Fonts/*.cs" Link="Linked/Fonts/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Fixtures/fixture.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../Fonts/BIZUDPGothic-Bold.ttf" Link="Fonts/BIZUDPGothic-Bold.ttf" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

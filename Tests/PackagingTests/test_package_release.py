@@ -30,6 +30,8 @@ class PackageReleaseTests(unittest.TestCase):
             "Languages/Japanese/Keyed/SimpleSigh.xml": b"<LanguageData/>",
             "Languages/Japanese/DefInjected/ThingDef/SimpleSigh.xml": b"<LanguageData/>",
             "Textures/Things/Building/SimpleSign.png": b"\x89PNG\r\n\x1a\nmock",
+            "Fonts/BIZUDPGothic-Bold.ttf": b"\x00\x01\x00\x00mock-font",
+            "Fonts/BIZUDPGothic-OFL.txt": b"SIL OPEN FONT LICENSE Version 1.1",
         }
         for relative, data in self.runtime.items():
             file = self.root / relative
@@ -48,6 +50,7 @@ class PackageReleaseTests(unittest.TestCase):
             "README.md", "Source/Secrets.cs", "Tests/Bad.cs", "docs/notes.md",
             "tools/tool.py", ".github/workflows/ci.yml",
             "Textures/Things/Building/debug.py",
+            "Fonts/Other.ttf", "Fonts/notes.md",
             "1.7/Assemblies/Assembly-CSharp.dll", "1.7/Assemblies/0Harmony.dll",
         ]
         for path in extras:
@@ -63,6 +66,13 @@ class PackageReleaseTests(unittest.TestCase):
             for name, data in self.runtime.items():
                 self.assertEqual(archive.read("SimpleSigh/" + name), data)
             self.assertTrue(all(x.startswith("SimpleSigh/") for x in files))
+
+    def test_font_without_licence_rejected(self):
+        """The OFL requires the licence to accompany the font, so a ZIP without it must not be built."""
+        (self.root / "Fonts/BIZUDPGothic-OFL.txt").unlink()
+        result = self.call()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("BIZUDPGothic-OFL.txt", result.stderr)
 
     def test_missing_dll_rejected(self):
         (self.root / "1.7/Assemblies/SimpleSigh.dll").unlink()

@@ -8,7 +8,7 @@ namespace SimpleSigh.Rendering;
 
 /// <summary>
 /// Builds the text mesh for one sign from <see cref="SignTextLayout"/> (glyph quads inside the sign's
-/// display panel), in the map's XZ plane, textured from the game font atlas with the 1.7 "WorldText" shader.
+/// display panel), in the map's XZ plane, textured from the sign glyph atlas with the 1.7 "WorldText" shader.
 /// Building is only done when something visible changed; drawing a built mesh is one DrawMesh.
 /// </summary>
 public static class SignTextRenderer
@@ -31,7 +31,7 @@ public static class SignTextRenderer
     }
 
     /// <summary>Creates the mesh, or returns false when there is nothing to draw.</summary>
-    public static bool TryBuild(CompSignText sign, TmpGlyphSource glyphs, out Mesh mesh, out Material material, out Vector3 localCenter)
+    public static bool TryBuild(CompSignText sign, ISignGlyphs glyphs, out Mesh mesh, out Material material, out Vector3 localCenter)
     {
         mesh = null;
         material = null;
