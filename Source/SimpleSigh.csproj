@@ -28,12 +28,20 @@
   </PropertyGroup>
 
   <!--
-    Compile-time references to RimWorld 1.7. They are never copied or committed.
+    Compile-time references to RimWorld 1.7. Game assemblies are never copied or committed.
+    Default: the public reference-only package Krafs.Rimworld.Ref (signatures only, published with
+    Ludeon's permission "for reference purposes"). 1.7.4982-unstable is pinned because its
+    Assembly-CSharp (1.7.9787.38423) is the same build as the private rimworld_DLL.zip references;
+    building against either produces a byte-identical SimpleSigh.dll.
+    Override with local assemblies:
       RIMWORLD_REFERENCE_DIR : folder that directly contains Assembly-CSharp.dll, Waylith.dll, UnityStubs.dll
                                (e.g. the private extraction of rimworld_DLL.zip).
       RIMWORLD_GAME_DIR      : a RimWorld 1.7 installation; the managed folder is probed below.
-    A reference folder only allows compiling; it is not a playable game.
+    Either way the result only proves compilation; it is not a playable game.
   -->
+  <PropertyGroup>
+    <RimRefVersion Condition="'$(RimRefVersion)' == ''">1.7.4982-unstable</RimRefVersion>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(RimWorldReferenceDir)' == '' And '$(RIMWORLD_REFERENCE_DIR)' != ''">
     <RimWorldReferenceDir>$(RIMWORLD_REFERENCE_DIR)</RimWorldReferenceDir>
   </PropertyGroup>
@@ -44,7 +52,11 @@
     <RimWorldReferenceDir>$(RIMWORLD_GAME_DIR)</RimWorldReferenceDir>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(RimWorldReferenceDir)' == ''">
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="$(RimRefVersion)" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RimWorldReferenceDir)' != ''">
     <Reference Include="Assembly-CSharp">
       <HintPath>$(RimWorldReferenceDir)/Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
@@ -59,9 +71,9 @@
     </Reference>
   </ItemGroup>
 
-  <Target Name="SimpleSighCheckReferences" BeforeTargets="ResolveAssemblyReferences">
+  <Target Name="SimpleSighCheckReferences" BeforeTargets="ResolveAssemblyReferences" Condition="'$(RimWorldReferenceDir)' != ''">
     <Error Condition="!Exists('$(RimWorldReferenceDir)/Assembly-CSharp.dll')"
-           Text="RimWorld 1.7 reference assemblies not found. Set RIMWORLD_REFERENCE_DIR (folder containing Assembly-CSharp.dll, Waylith.dll, UnityStubs.dll) or RIMWORLD_GAME_DIR. Current: '$(RimWorldReferenceDir)'." />
+           Text="RimWorld 1.7 reference assemblies not found in '$(RimWorldReferenceDir)'. RIMWORLD_REFERENCE_DIR must contain Assembly-CSharp.dll, Waylith.dll and UnityStubs.dll; unset it to use the Krafs.Rimworld.Ref package." />
   </Target>
 
 </Project>

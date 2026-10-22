@@ -5,51 +5,31 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Xml.Linq;
+using SimpleSigh.Fonts;
 using SimpleSigh.Layout;
 
 namespace SimpleSigh.Preview;
 
 /// <summary>
-/// Reads glyph metrics (JSON from render_preview.py) and the mod's Defs, then lays out sample texts
-/// with the mod's SignPanelGeometry + SignTextLayout for every def and rotation. Writes quads as JSON.
+/// Lays out sample texts with the mod's own code for every def and rotation: SignPanelGeometry and
+/// SignTextLayout, with glyphs from the bundled sign font rasterized by the mod's GlyphAtlas. Writes the
+/// quads with their atlas UVs as JSON and the atlas coverage as raw bytes, so the preview draws exactly
+/// the texture regions the in-game mesh would sample.
+/// Usage: SignPreview REPO FONT.ttf CASES.json OUT.json OUT-ATLAS.bin
 /// </summary>
 public static class Program
 {
-    private sealed class JsonGlyphs : IGlyphSource
-    {
-        private readonly Dictionary<char, GlyphMetrics> glyphs = new Dictionary<char, GlyphMetrics>();
-
-        public JsonGlyphs(JsonElement root)
-        {
-            LineHeight = root.GetProperty("lineHeight").GetSingle();
-            foreach (JsonProperty p in root.GetProperty("glyphs").EnumerateObject())
-            {
-                JsonElement g = p.Value;
-                glyphs[p.Name[0]] = new GlyphMetrics
-                {
-                    Found = true,
-                    Visible = g.GetProperty("visible").GetBoolean(),
-                    AdvanceX = g.GetProperty("advance").GetSingle(),
-                    X0 = g.GetProperty("x0").GetSingle(),
-                    Y0 = g.GetProperty("y0").GetSingle(),
-                    X1 = g.GetProperty("x1").GetSingle(),
-                    Y1 = g.GetProperty("y1").GetSingle(),
-                    U0 = p.Name[0],
-                };
-            }
-        }
-
-        public float LineHeight { get; }
-
-        public bool TryGetGlyph(char c, out GlyphMetrics glyph) => glyphs.TryGetValue(c, out glyph);
-    }
-
     public static int Main(string[] args)
     {
         string repo = args[0];
-        var glyphs = new JsonGlyphs(JsonDocument.Parse(File.ReadAllText(args[1])).RootElement);
+        var atlas = new GlyphAtlas(new TrueTypeFont(File.ReadAllBytes(args[1])), 48f, 512, 2048);
         JsonElement cases = JsonDocument.Parse(File.ReadAllText(args[2])).RootElement;
         var defs = LoadDefs(repo);
+        // Rasterize every character first so all quads refer to the final atlas layout.
+        foreach (JsonElement c in cases.EnumerateArray())
+        {
+            atlas.Ensure(c.GetProperty("text").GetString());
+        }
         var output = new List<object>();
         foreach (JsonElement c in cases.EnumerateArray())
         {
@@ -57,6 +37,7 @@ public static class Program
             int rotation = c.GetProperty("rotation").GetInt32();
             string text = c.GetProperty("text").GetString();
             float userScale = c.TryGetProperty("scale", out JsonElement s) ? s.GetSingle() : 1f;
+            bool autoWrap = !c.TryGetProperty("autoWrap", out JsonElement w) || w.GetBoolean();
             XElement def = defs[defName];
             XElement graphic = Field(def, defs, "graphicData");
             XElement comp = Field(def, defs, "comps").Elements("li").First(li => (string)li.Attribute("Class") == "SimpleSigh.Signs.CompProperties_SignText");
@@ -74,7 +55,7 @@ public static class Program
             bool rotatedSize = multi || !drawRotated;
             bool mirror = multi && rotation == 3;
             PanelPlacement panel = SignPanelGeometry.Place(north, horizontal, drawSize[0], drawSize[1], rotation, offset[0], offset[2], rotatedSize, mirror);
-            SignTextLayout.Result layout = SignTextLayout.Build(text, panel, padding, multiline, userScale, glyphs);
+            SignTextLayout.Result layout = SignTextLayout.Build(text, panel, padding, multiline, userScale, atlas, autoWrap);
             output.Add(new
             {
                 def = defName,
@@ -82,10 +63,18 @@ public static class Program
                 text,
                 panel = new { x = panel.CenterX, z = panel.CenterZ, w = panel.Width, h = panel.Height },
                 fits = layout.Fits,
-                quads = layout.Quads.Select(q => new { ch = ((char)q.U0).ToString(), x0 = q.X0 + layout.CenterX, x1 = q.X1 + layout.CenterX, z0 = q.Y0 + layout.CenterZ, z1 = q.Y1 + layout.CenterZ }),
+                lines = layout.LineCount,
+                lineHeight = layout.LineHeight,
+                missing = GlyphQuadBuilder.HasMissingGlyphs(text, atlas),
+                quads = layout.Quads.Select(q => new
+                {
+                    x0 = q.X0 + layout.CenterX, x1 = q.X1 + layout.CenterX, z0 = q.Y0 + layout.CenterZ, z1 = q.Y1 + layout.CenterZ,
+                    u0 = q.U0, u1 = q.U1, vTop = q.VTop, vBottom = q.VBottom,
+                }),
             });
         }
-        File.WriteAllText(args[3], JsonSerializer.Serialize(output));
+        File.WriteAllText(args[3], JsonSerializer.Serialize(new { atlasWidth = atlas.Width, atlasHeight = atlas.Height, cases = output }));
+        File.WriteAllBytes(args[4], atlas.Alpha);
         return 0;
     }
 

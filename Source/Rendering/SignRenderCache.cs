@@ -29,14 +29,17 @@ public sealed class SignRenderCache
     /// <summary>True when the last build found characters the font cannot draw.</summary>
     public bool MissingGlyphs { get; private set; }
 
-    public BuiltText Get(CompSignText sign, TmpGlyphSource glyphs)
+    public BuiltText Get(CompSignText sign, ISignGlyphs glyphs)
     {
         SignRenderKey key = KeyFor(sign, glyphs);
         if (slot.TryGet(key, out BuiltText cached))
         {
             return cached;
         }
-        // Rebuild path only: the closure below is allocated once per visible change, not per frame.
+        // Rebuild path only: rasterize missing characters first. That can grow the atlas (a new
+        // generation), so the key is taken afterwards; the closure is allocated once per visible change.
+        glyphs.Prepare(sign.Text);
+        key = KeyFor(sign, glyphs);
         BuiltText built = slot.Get(key, _ =>
         {
             MissingGlyphs = GlyphQuadBuilder.HasMissingGlyphs(sign.Text, glyphs);
@@ -67,7 +70,7 @@ public sealed class SignRenderCache
         Registered.Clear();
     }
 
-    private static SignRenderKey KeyFor(CompSignText sign, TmpGlyphSource glyphs)
+    private static SignRenderKey KeyFor(CompSignText sign, ISignGlyphs glyphs)
     {
         Thing thing = sign.parent;
         Rot4 rot = thing.Rotation;
@@ -77,7 +80,7 @@ public sealed class SignRenderCache
             graphic?.drawSize ?? Vector2.zero, graphic?.DrawOffset(rot) ?? Vector3.zero);
         Color32 c = sign.TextColor;
         uint rgba = ((uint)c.r << 24) | ((uint)c.g << 16) | ((uint)c.b << 8) | c.a;
-        return new SignRenderKey(sign.Text, rgba, sign.Scale, rot.AsInt, glyphs.AtlasVersion, glyphs.FontIndex, layoutHash);
+        return new SignRenderKey(sign.Text, rgba, sign.Scale, rot.AsInt, glyphs.Generation, glyphs.SourceId, layoutHash, sign.AutoWrap);
     }
 
     public sealed class BuiltText

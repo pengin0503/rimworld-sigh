@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -124,18 +125,40 @@ public static class GlyphQuadBuilder
         return quads;
     }
 
-    /// <summary>Keeps only quads lying completely inside a centred box, so text never spills off the panel.</summary>
+    /// <summary>
+    /// Clips quads to a centred box so text never spills off the panel. A glyph crossing the edge is
+    /// trimmed, with its texture coordinates cut in proportion, rather than dropped: a character whose
+    /// ink slightly exceeds its line box (accents, tall glyphs) stays visible. Quads entirely outside
+    /// the box are removed.
+    /// </summary>
     public static List<GlyphQuad> ClipTo(List<GlyphQuad> quads, float halfWidth, float halfHeight)
     {
-        const float tolerance = 1e-4f;
         var kept = new List<GlyphQuad>(quads.Count);
         foreach (GlyphQuad quad in quads)
         {
-            if (quad.X0 >= -halfWidth - tolerance && quad.X1 <= halfWidth + tolerance
-                && quad.Y0 >= -halfHeight - tolerance && quad.Y1 <= halfHeight + tolerance)
+            float x0 = Math.Max(quad.X0, -halfWidth);
+            float x1 = Math.Min(quad.X1, halfWidth);
+            float y0 = Math.Max(quad.Y0, -halfHeight);
+            float y1 = Math.Min(quad.Y1, halfHeight);
+            if (x1 - x0 <= 1e-6f || y1 - y0 <= 1e-6f)
             {
-                kept.Add(quad);
+                continue;
             }
+            float width = quad.X1 - quad.X0;
+            float height = quad.Y1 - quad.Y0;
+            float du = quad.U1 - quad.U0;
+            float dv = quad.VTop - quad.VBottom;
+            kept.Add(new GlyphQuad
+            {
+                X0 = x0,
+                X1 = x1,
+                Y0 = y0,
+                Y1 = y1,
+                U0 = quad.U0 + du * (x0 - quad.X0) / width,
+                U1 = quad.U0 + du * (x1 - quad.X0) / width,
+                VBottom = quad.VBottom + dv * (y0 - quad.Y0) / height,
+                VTop = quad.VBottom + dv * (y1 - quad.Y0) / height,
+            });
         }
         return kept;
     }
@@ -146,14 +169,24 @@ public static class GlyphQuadBuilder
             || (source.TryGetGlyph(Replacement, out glyph) && glyph.Found);
     }
 
-    /// <summary>Display-only NFC: "か" + U+3099 is drawn with the font's "が". Saved text is unchanged.</summary>
-    private static bool TryGetSingle(string element, IGlyphSource source, out GlyphMetrics glyph)
+    /// <summary>
+    /// The single character a text element is drawn with. Display-only NFC: "か" + U+3099 is drawn with
+    /// the font's "が"; saved text is unchanged. False for elements that need more than one character
+    /// (surrogate pairs, unnormalizable combining sequences): those are drawn as <see cref="Replacement"/>.
+    /// </summary>
+    public static bool TryGetDisplayChar(string element, out char c)
     {
         if (element.Length > 1 && !element.IsNormalized(NormalizationForm.FormC))
         {
             element = element.Normalize(NormalizationForm.FormC);
         }
-        if (element.Length == 1 && source.TryGetGlyph(element[0], out glyph) && glyph.Found)
+        c = element.Length == 1 ? element[0] : '\0';
+        return element.Length == 1;
+    }
+
+    private static bool TryGetSingle(string element, IGlyphSource source, out GlyphMetrics glyph)
+    {
+        if (TryGetDisplayChar(element, out char c) && source.TryGetGlyph(c, out glyph) && glyph.Found)
         {
             return true;
         }

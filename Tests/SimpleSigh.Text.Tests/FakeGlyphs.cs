@@ -11,6 +11,9 @@ internal sealed class FakeGlyphs : IGlyphSource
 {
     public readonly HashSet<char> Missing = new HashSet<char>();
 
+    /// <summary>Pixels of ink above the line box (e.g. accents taller than the font ascent).</summary>
+    public readonly Dictionary<char, float> Overhang = new Dictionary<char, float>();
+
     public float LineHeight => 30f;
 
     public static float Advance(char c) => (c >= '　' && c <= '鿿') || (c >= '＀' && c <= '￯') ? 20f : 10f;
@@ -28,7 +31,7 @@ internal sealed class FakeGlyphs : IGlyphSource
             Found = true,
             Visible = c != ' ',
             AdvanceX = advance,
-            X0 = 1f, X1 = advance - 1f, Y0 = 4f, Y1 = 26f,
+            X0 = 1f, X1 = advance - 1f, Y0 = 4f - Overhang.GetValueOrDefault(c), Y1 = 26f,
             U0 = c / 1000f, V0 = 0.1f, U1 = c / 1000f + 0.01f, V1 = 0.2f,
         };
         return true;

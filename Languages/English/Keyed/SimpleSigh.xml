@@ -14,5 +14,7 @@
   <SimpleSigh_PasteTextDesc>Replace this sign's text, colour and size with the copied ones.</SimpleSigh_PasteTextDesc>
   <SimpleSigh_Copied>Sign text copied.</SimpleSigh_Copied>
   <SimpleSigh_NoText>No text yet. Use "Edit text" to write on the sign.</SimpleSigh_NoText>
-  <SimpleSigh_MissingGlyphs>Some characters cannot be drawn with the current game font and are shown as "?".</SimpleSigh_MissingGlyphs>
+  <SimpleSigh_MissingGlyphs>Some characters are not in the sign font and are shown as "?". The saved text is unchanged.</SimpleSigh_MissingGlyphs>
+  <SimpleSigh_AutoWrap>Wrap long text automatically to make it larger</SimpleSigh_AutoWrap>
+  <SimpleSigh_LongTextHint>Long text is small on a 1×1 sign. A 2×1 notice board (multi-line) is easier to read.</SimpleSigh_LongTextHint>
 </LanguageData>

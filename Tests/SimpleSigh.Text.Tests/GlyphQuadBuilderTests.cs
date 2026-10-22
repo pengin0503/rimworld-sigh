@@ -92,17 +92,46 @@ public class GlyphQuadBuilderTests
     }
 
     [Fact]
-    public void ClipDropsQuadsOutsidePanel()
+    public void ClipKeepsInsideQuadsAndDropsQuadsCompletelyOutside()
     {
         var quads = new List<GlyphQuad>
         {
             new GlyphQuad { X0 = -0.2f, X1 = 0.2f, Y0 = -0.1f, Y1 = 0.1f },
-            new GlyphQuad { X0 = 0.4f, X1 = 0.6f, Y0 = -0.1f, Y1 = 0.1f },
-            new GlyphQuad { X0 = -0.1f, X1 = 0.1f, Y0 = 0.25f, Y1 = 0.35f },
+            new GlyphQuad { X0 = 0.6f, X1 = 0.8f, Y0 = -0.1f, Y1 = 0.1f },
+            new GlyphQuad { X0 = -0.1f, X1 = 0.1f, Y0 = 0.35f, Y1 = 0.45f },
         };
         List<GlyphQuad> kept = GlyphQuadBuilder.ClipTo(quads, halfWidth: 0.5f, halfHeight: 0.3f);
         Assert.Single(kept);
         Assert.Equal(-0.2f, kept[0].X0);
+        Assert.Equal(0.2f, kept[0].X1);
+    }
+
+    [Fact]
+    public void ClipTrimsAGlyphOnTheEdgeInsteadOfDroppingIt()
+    {
+        // Ink overhanging the right and top edges is cut off; the visible part keeps its texture mapping.
+        var quad = new GlyphQuad { X0 = 0.4f, X1 = 0.6f, Y0 = 0.2f, Y1 = 0.4f, U0 = 0.1f, U1 = 0.3f, VTop = 0.9f, VBottom = 0.5f };
+        GlyphQuad trimmed = Assert.Single(GlyphQuadBuilder.ClipTo(new List<GlyphQuad> { quad }, 0.5f, 0.3f));
+        Assert.Equal(0.4f, trimmed.X0, 5);
+        Assert.Equal(0.5f, trimmed.X1, 5);
+        Assert.Equal(0.2f, trimmed.Y0, 5);
+        Assert.Equal(0.3f, trimmed.Y1, 5);
+        Assert.Equal(0.1f, trimmed.U0, 5);
+        Assert.Equal(0.2f, trimmed.U1, 5);
+        Assert.Equal(0.7f, trimmed.VTop, 5);
+        Assert.Equal(0.5f, trimmed.VBottom, 5);
+    }
+
+    [Fact]
+    public void ClipTrimsLeftAndBottomEdgesToo()
+    {
+        var quad = new GlyphQuad { X0 = -0.6f, X1 = -0.4f, Y0 = -0.4f, Y1 = -0.2f, U0 = 0f, U1 = 1f, VTop = 1f, VBottom = 0f };
+        GlyphQuad trimmed = Assert.Single(GlyphQuadBuilder.ClipTo(new List<GlyphQuad> { quad }, 0.5f, 0.3f));
+        Assert.Equal(-0.5f, trimmed.X0, 5);
+        Assert.Equal(0.5f, trimmed.U0, 5);
+        Assert.Equal(-0.3f, trimmed.Y0, 5);
+        Assert.Equal(0.5f, trimmed.VBottom, 5);
+        Assert.Equal(1f, trimmed.VTop, 5);
     }
 
     [Fact]

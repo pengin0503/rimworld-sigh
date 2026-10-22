@@ -371,6 +371,16 @@ class ProjectTests(unittest.TestCase):
             self.assertIn(name, refs)
             self.assertEqual(refs[name].findtext("Private"), "false", name)
 
+    def test_public_reference_package_is_pinned_and_compile_only(self):
+        """Krafs.Rimworld.Ref 1.7.4982-unstable is the game build the shipped DLL is reproduced from."""
+        packages = {p.get("Include"): p for p in self.project.iter("PackageReference")}
+        self.assertIn("Krafs.Rimworld.Ref", packages)
+        package = packages["Krafs.Rimworld.Ref"]
+        self.assertEqual(package.get("Version"), "$(RimRefVersion)")
+        self.assertEqual(self.prop("RimRefVersion"), "1.7.4982-unstable")
+        self.assertEqual(package.get("ExcludeAssets"), "runtime")
+        self.assertEqual(package.get("PrivateAssets"), "all")
+
     def test_no_harmony_reference_without_dependency(self):
         refs = {r.get("Include") for r in self.project.iter("Reference")}
         packages = {r.get("Include") for r in self.project.iter("PackageReference")}
@@ -550,6 +560,38 @@ class PackagingTests(unittest.TestCase):
     def test_no_proprietary_binaries_in_repository(self):
         found = [f for f in iter_files(ROOT, ".dll") if os.path.basename(f).lower() in FORBIDDEN_BINARIES]
         self.assertEqual(found, [])
+
+
+class SignFontTests(unittest.TestCase):
+    """The bundled sign font (#4): a TrueType file the C# loader accepts, shipped with its OFL licence."""
+
+    FONT = os.path.join(ROOT, "Fonts", "BIZUDPGothic-Bold.ttf")
+    LICENCE = os.path.join(ROOT, "Fonts", "BIZUDPGothic-OFL.txt")
+
+    def test_font_is_a_truetype_outline_font(self):
+        with open(self.FONT, "rb") as f:
+            header = f.read(12)
+        self.assertEqual(struct.unpack(">I", header[:4])[0], 0x00010000)
+
+    def test_licence_is_ofl_without_reserved_font_name(self):
+        with open(self.LICENCE, encoding="utf-8") as f:
+            text = f.read()
+        self.assertIn("SIL Open Font License, Version 1.1", text)
+        self.assertIn("BIZ UDGothic Project Authors", text)
+        # A Reserved Font Name (declared after the copyright line) would restrict modified copies; none is declared.
+        copyright_statement = text.split("This Font Software is licensed")[0]
+        self.assertNotIn("Reserved Font Name", copyright_statement)
+
+    def test_loader_path_matches_the_bundled_file(self):
+        with open(os.path.join(ROOT, "Source", "Rendering", "SignFont.cs"), encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn('FontRelativePath = "Fonts/BIZUDPGothic-Bold.ttf"', source)
+
+    def test_mod_class_records_the_mod_folder(self):
+        with open(os.path.join(ROOT, "Source", "SimpleSighMod.cs"), encoding="utf-8") as f:
+            source = f.read()
+        self.assertIn("class SimpleSighMod : Mod", source)
+        self.assertIn("SignFont.ModRootDir = content.RootDir", source)
 
 
 if __name__ == "__main__":

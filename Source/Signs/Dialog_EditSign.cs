@@ -17,6 +17,13 @@ public class Dialog_EditSign : Window
     private const float RowGap = 8f;
     private const float ButtonHeight = 35f;
 
+    /// <summary>
+    /// From seven characters on, a 1x1 sign's rows fall to about 0.16 cell or less even with automatic
+    /// wrapping (under 8 px at 1080p fully zoomed in; docs/testing/legibility.md), so the editor
+    /// suggests the 2x1 notice board.
+    /// </summary>
+    private const int LongTextHintElements = 6;
+
     private static readonly List<Color> Palette = new List<Color>
     {
         new Color(0.13f, 0.11f, 0.09f), new Color(0.35f, 0.35f, 0.35f), new Color(0.95f, 0.95f, 0.92f),
@@ -30,6 +37,7 @@ public class Dialog_EditSign : Window
     private readonly SignEditSession session;
     private Color color;
     private float scale;
+    private bool autoWrap;
     private bool focused;
 
     public Dialog_EditSign(CompSignText sign)
@@ -39,6 +47,7 @@ public class Dialog_EditSign : Window
         session = new SignEditSession(sign.Text, props.maxElements, props.multiline);
         color = sign.TextColor;
         scale = sign.Scale;
+        autoWrap = sign.AutoWrap;
         doCloseX = true;
         forcePause = true;
         closeOnAccept = false;
@@ -46,7 +55,7 @@ public class Dialog_EditSign : Window
         absorbInputAroundWindow = true;
     }
 
-    public override Vector2 InitialSize => new Vector2(520f, session.Multiline ? 500f : 380f);
+    public override Vector2 InitialSize => new Vector2(520f, session.Multiline ? 500f : 440f);
 
     public override void DoWindowContents(Rect inRect)
     {
@@ -77,6 +86,20 @@ public class Dialog_EditSign : Window
 
         DrawStatusRow(new Rect(inRect.x, y, inRect.width, 24f));
         y += 24f + RowGap;
+
+        if (!session.Multiline)
+        {
+            Widgets.CheckboxLabeled(new Rect(inRect.x, y, inRect.width, 24f), "SimpleSigh_AutoWrap".Translate(), ref autoWrap);
+            y += 24f + 4f;
+            if (session.ElementCount > LongTextHintElements)
+            {
+                Color previous = GUI.color;
+                GUI.color = Color.gray;
+                Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "SimpleSigh_LongTextHint".Translate());
+                GUI.color = previous;
+            }
+            y += 24f + RowGap;
+        }
 
         Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "SimpleSigh_TextColor".Translate());
         y += 24f;
@@ -133,7 +156,7 @@ public class Dialog_EditSign : Window
                 MessageTypeDefOf.RejectInput, historical: false);
             return;
         }
-        sign.Apply(normalized, color, scale);
+        sign.Apply(normalized, color, scale, autoWrap);
         Close();
     }
 }

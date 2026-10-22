@@ -15,6 +15,7 @@
 | 対応ゲーム | RimWorld **1.7 のみ** |
 | 前提 MOD | なし（Harmony も不要） |
 | 同梱される DLL | `1.7/Assemblies/SimpleSigh.dll` |
+| 同梱フォント | `Fonts/BIZUDPGothic-Bold.ttf`（BIZ UDPゴシック Bold、SIL Open Font License 1.1） |
 | 開発・試用状況 | M1（基本看板）、M2（壁掛け・掲示板）、M3（電光掲示板）を実装。**ゲーム内は未確認** |
 
 ## ゲーム内でできること
@@ -23,8 +24,8 @@
 
 | 建築物 | サイズ | 主な機能 |
 | --- | --- | --- |
-| **看板** | 1×1 | 木・石・金属で作成。最大64文字・1行 |
-| **壁掛け看板** | 1×1 | 壁に取り付ける小型看板。最大64文字・1行 |
+| **看板** | 1×1 | 木・石・金属で作成。最大64文字（入力は1行）。長い文字は自動で折り返して大きく表示 |
+| **壁掛け看板** | 1×1 | 壁に取り付ける小型看板。最大64文字（入力は1行）。長い文字は自動で折り返して大きく表示 |
 | **掲示板** | 2×1 | 最大256文字・複数行。日本語の文字単位・英語の単語単位で自動折り返し |
 | **電光掲示板** | 2×1 | 最大256文字・複数行。研究「電気」が必要。40W消費し、停電中は文字が消えて復電時に復元 |
 
@@ -39,7 +40,17 @@
 
 看板の **「文字をコピー」／「文字を貼り付け」** で別の看板に設定を複製できます。
 入力上限を超えた場合や使用できない制御文字は、黙って切り捨てずエラーとして扱います。
-フォントに存在しない文字は `?` に置き換わる場合があります（元の文章は保持）。
+
+**日本語の表示（#4）：** 看板の文字は MOD に同梱した日本語フォント（BIZ UDPゴシック Bold）で描画します。
+ゲームの表示言語に関係なく、漢字・ひらがな・カタカナ・英数字・記号を表示できます。
+フォントにない文字（絵文字など）だけが `?` になります（保存された文章は変わりません）。
+フォントを読み込めなかった場合はログにエラーを1回出し、ゲーム標準フォントで描画します（この場合は日本語が `?` になることがあります）。
+
+**長い文字（#5）：** 1×1 の看板では、4文字以上の和文ラベルを行の長さをそろえて折り返し（例：「立入／禁止」）、
+1行に詰めるより大きく表示します。1〜3文字は従来どおり1行で大きく表示し、英単語の途中では改行しません。
+編集画面の「長い文字を自動で折り返して大きく表示する」で看板ごとに切り替えられます（初期値：オン）。
+1×1 のマスはもともと小さいため、7文字以上の文章は拡大しないと読みにくくなります。
+長い文には **2×1 の掲示板** をおすすめします。詳しい数値は [`docs/testing/legibility.md`](docs/testing/legibility.md) を参照してください。
 
 **電光掲示板**は金属と工業用コンポーネント2個で建築する想定です。
 電力が供給される間だけ文字と周囲の小さな光が点灯し、停電時には表示が消えます。
@@ -61,6 +72,7 @@ C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SimpleSigh\
 ├─ About\About.xml
 ├─ 1.7\Assemblies\SimpleSigh.dll
 ├─ Defs\
+├─ Fonts\BIZUDPGothic-Bold.ttf（看板用フォント）と BIZUDPGothic-OFL.txt
 ├─ Languages\
 └─ Textures\
 ```
@@ -95,27 +107,30 @@ GitHubへのログインが必要な場合や、Artifactの保存期間（30日�
 | XML・構造テスト | 実装済み（RimWorld Coreを必要とする追加確認は環境次第） |
 | C#ユニットテスト（文章・描画レイアウト等） | 実装済み・CIあり |
 | ZIPが必要なファイルのみを含むか | 専用の回帰テストとCIで確認 |
-| 1.7参照DLLによるコンパイル・スモークテスト | 開発環境で実施済み／公開CIでは未実施 |
+| 1.7参照アセンブリによるコンパイルと、同梱DLLがソースと一致するかの確認 | CIで実施（`Krafs.Rimworld.Ref` 1.7.4982、最新1.7でもコンパイル確認） |
+| 同梱フォントのラスタライズ（FreeTypeとの比較・単体テスト） | 実施済み（オフライン） |
+| ゲームDLLを読み込むスモークテスト | 開発環境のみ（実ゲームのDLLが必要） |
 | **ゲーム本体でのプレイ** | **NOT RUN（未確認）** |
 
 ![オフラインで描画したレイアウトプレビュー（ゲーム画面ではありません）](docs/images/offline-layout-preview.png)
 
-*上の画像はオフラインのレイアウト計算によるプレビューです。RimWorld内のスクリーンショットではありません。*
+*上の画像はオフラインのプレビューです。MOD自身のレイアウト計算と、同梱フォントから作ったグリフアトラスを使って描いていますが、RimWorld内のスクリーンショットではありません。*
 
 ## 開発・ビルド・配布の仕組み
 
-開発環境には.NET 10 SDK、Python 3、RimWorld 1.7 の
-`Assembly-CSharp.dll`、`Waylith.dll`、`UnityStubs.dll` が必要です。
-ゲームDLLはリポジトリや配布ZIPには含めません。
+開発環境には .NET 10 SDK と Python 3 が必要です。
+MOD 本体は NuGet の参照専用パッケージ `Krafs.Rimworld.Ref`（ゲームのシグネチャのみ。Ludeon が参照目的での利用を許可）に対してコンパイルするため、
+ゲーム本体の DLL がなくてもビルドできます。固定している 1.7.4982-unstable は非公開の参照 DLL と同じビルドで、どちらに対してビルドしても同一の `SimpleSigh.dll` になります。
+ゲーム DLL はリポジトリや配布 ZIP には含めません。実ゲームの DLL を使う場合は `RIMWORLD_REFERENCE_DIR` を指定します（スモークテストはその場合のみ実行）。
 
 ```bash
-export RIMWORLD_REFERENCE_DIR=/path/to/RimWorld_1.7_references
-tools/verify.sh
+tools/verify.sh            # 構造・パッケージ・単体テスト、Releaseビルド、同梱DLLとの一致確認
 python -m unittest discover -s Tests/PackagingTests -v
 python tools/package_release.py --version v0.1.0-test --output dist/SimpleSigh-v0.1.0-test.zip
 ```
 
-`.github/workflows/ci.yml` はPRへの更新時にXMLテスト・C#単体テスト・ZIPパッケージングテストを実行し、成功時は試用ZIPをArtifactとして添付します。
+`.github/workflows/ci.yml` はPRへの更新時にXMLテスト・C#単体テスト・MOD本体のビルド（コミット済みDLLとの一致確認を含む）・ZIPパッケージングテストを実行し、成功時は試用ZIPをArtifactとして添付します。
+ソースを変更したら `tools/verify.sh` で `1.7/Assemblies/SimpleSigh.dll` を再ビルドし、一緒にコミットしてください。
 
 `.github/workflows/release.yml` は **mainに含まれるコミットへ`v`で始まるタグをpushした場合のみ**、
 再度テスト・ZIP作成を行い、GitHub ReleaseのAssetsに直接ダウンロードできるZIPをアップロードします。
@@ -133,14 +148,25 @@ git push origin v0.1.0-test.1
 ゲーム内での確認は以下のチェックリストを参照してください：
 `docs/testing/m1-manual-checklist.md`、
 `docs/testing/m2-manual-checklist.md`、
-`docs/testing/m3-manual-checklist.md`。
+`docs/testing/m3-manual-checklist.md`、
+`docs/testing/japanese-and-legibility-checklist.md`（日本語表示・長い文字）。
+
+オフラインプレビューの再生成：`python3 tools/preview/render_preview.py docs/images/offline-layout-preview.png`
 
 その他の設計・実装判断は `docs/development/implementation-log.md` に記録されています。
 
 ## 制限・未検証事項
 
-- 日本語以外のゲーム言語で日本語グリフが表示できるかは未確認です。
+- 同梱フォントによる日本語描画はオフラインで検証済みですが、ゲーム内（Waylith のテクスチャ転送・シェーダー）での表示は未確認です。
+- 1×1 の看板は表示面が約 0.72×0.44 マスしかなく、長い文はズームしないと読めません（`docs/testing/legibility.md`）。
+- 掲示板・電光掲示板（複数行）は従来どおり、大きく表示するために長い英単語を途中で折り返すことがあります。
 - 文字の向き・回転・照明・霧・UIスケール・電光掲示板の復電動作は実機確認が必要です。
 - 絵文字・複雑な書記体系の完全対応、LEDスクロール、3×1サイズの掲示板は未実装です。
 - 複数選択した看板の一括編集、長文入力欄のスクロールバーは未対応です。
 - 現時点で、既存セーブからMODを削除した場合の互換性は保証しません。
+
+## ライセンス・クレジット
+
+- 看板用フォント：**BIZ UDPゴシック**（Copyright 2022 The BIZ UDGothic Project Authors、株式会社モリサワ）。
+  [SIL Open Font License 1.1](Fonts/BIZUDPGothic-OFL.txt) に基づき、改変せずに同梱しています。
+  入手元：[google/fonts `ofl/bizudpgothic`](https://github.com/google/fonts/tree/main/ofl/bizudpgothic)。
