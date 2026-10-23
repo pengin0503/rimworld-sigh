@@ -21,6 +21,8 @@ class PackageReleaseTests(unittest.TestCase):
         self.output = Path(self.temp.name) / "SimpleSigh-v0.1.0-test.zip"
         self.runtime = {
             "About/About.xml": b"<ModMetaData><name>Simple Sigh</name></ModMetaData>",
+            "About/Preview.png": b"\x89PNG\r\n\x1a\npreview",
+            "About/ModIcon.png": b"\x89PNG\r\n\x1a\nicon",
             "1.7/Assemblies/SimpleSigh.dll": b"MZmock-test-assembly",
             "Defs/ThingDefs/BasicSign.xml": b"<Defs/>",
             "Defs/ThingDefs/WallSign.xml": b"<Defs/>",
@@ -66,6 +68,22 @@ class PackageReleaseTests(unittest.TestCase):
             for name, data in self.runtime.items():
                 self.assertEqual(archive.read("SimpleSigh/" + name), data)
             self.assertTrue(all(x.startswith("SimpleSigh/") for x in files))
+
+    def test_missing_preview_rejected(self):
+        (self.root / "About/Preview.png").unlink()
+        result = self.call()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("About/Preview.png", result.stderr + result.stdout)
+
+    def test_workshop_id_is_packaged_when_present(self):
+        (self.root / "About/PublishedFileId.txt").write_bytes(b"1234567890")
+        (self.root / "About/notes.txt").write_bytes(b"NOT_FOR_RELEASE")
+        result = self.call()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with zipfile.ZipFile(self.output) as archive:
+            names = set(archive.namelist())
+        self.assertIn("SimpleSigh/About/PublishedFileId.txt", names)
+        self.assertNotIn("SimpleSigh/About/notes.txt", names)
 
     def test_font_without_licence_rejected(self):
         """The OFL requires the licence to accompany the font, so a ZIP without it must not be built."""

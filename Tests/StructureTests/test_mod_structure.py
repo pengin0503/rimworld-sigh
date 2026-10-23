@@ -116,6 +116,24 @@ class AboutTests(unittest.TestCase):
         versions = [li.text for li in self.about.find("supportedVersions")]
         self.assertEqual(versions, ["1.7"])
 
+    def test_about_has_workshop_fields(self):
+        """RimWorld 1.7 ModMetaData reads modVersion, About/Preview.png and About/ModIcon.png."""
+        import re
+        self.assertRegex(self.about.findtext("modVersion") or "", r"^\d+\.\d+\.\d+$")
+        preview = path("About", "Preview.png")
+        icon = path("About", "ModIcon.png")
+        self.assertTrue(os.path.isfile(preview), "About/Preview.png missing")
+        self.assertTrue(os.path.isfile(icon), "About/ModIcon.png missing")
+        self.assertLessEqual(os.path.getsize(preview), 1024 * 1024, "Workshop previews must be <= 1 MB")
+        width, height = png_size(preview)
+        self.assertIn(round(width / height, 2), (1.0, 1.78), "preview should be 1:1 or 16:9")
+        icon_w, icon_h = png_size(icon)
+        self.assertEqual(icon_w, icon_h)
+
+    def test_no_invented_workshop_id(self):
+        """PublishedFileId.txt is written by RimWorld on upload; a made-up ID would point at another item."""
+        self.assertFalse(os.path.exists(path("About", "PublishedFileId.txt")))
+
     def test_dependencies_are_complete_when_declared(self):
         deps = self.about.find("modDependencies")
         if deps is None:

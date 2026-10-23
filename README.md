@@ -100,6 +100,24 @@ GitHubへのログインが必要な場合や、Artifactの保存期間（30日�
 - ゲーム内でエラーが出たらログと再現手順を添えて [Issues](https://github.com/pengin0503/rimworld-sigh/issues) に報告してください。
 - セーブ破損を避けるため、検証中はバックアップ済みのセーブを使ってください。
 
+### RimSort で「Mods with Missing Properties」と表示される場合
+
+RimSort のこの警告は **Package ID** と **Publish Field ID（Steam Workshop の ID）** の2項目だけを調べます。
+Simple Sigh の Package ID（`pengin0503.simplesigh`）は `About/About.xml` にあります。
+Publish Field ID は `About/PublishedFileId.txt` から読まれ、**Steam Workshop に実際にアップロードしたときに RimWorld が作成する**ファイルです。
+Workshop に出していないローカルMODでは警告が出るのが正常で、MODの動作には影響しません。
+
+- 個人で使う場合：RimSort の警告ウィンドウで Simple Sigh を **Ignore** にすれば、以後表示されません。
+- 架空のIDを書いたファイルを置かないでください。RimSort が別の Workshop アイテムとして扱い、更新確認などで誤動作します。
+
+### Steam Workshop にアップロードする場合
+
+`About` には Workshop 用の `Preview.png`（1280×720）、`ModIcon.png`、`modVersion` を用意してあります。
+
+1. Releases のZIPを展開した `SimpleSigh` フォルダ（実行時ファイルだけを含む）を `RimWorld/Mods/` に置きます。リポジトリ全体をアップロードしないでください。
+2. RimWorld の設定で開発モードを有効にし、MOD一覧で Simple Sigh を選んで「Steam Workshop にアップロード」を実行します。
+3. アップロード後、RimWorld が `About/PublishedFileId.txt` を作成します。以後の更新ではこのファイルを残したまま再アップロードしてください（ZIPを作り直す場合もリリース用パッケージャはこのファイルを含めます）。
+
 ## 現在の検証状況
 
 | 確認項目 | 現状 |
