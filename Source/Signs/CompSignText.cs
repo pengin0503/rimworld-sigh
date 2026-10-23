@@ -186,7 +186,9 @@ public class CompSignText : ThingComp
     {
         base.PostDraw();
         Map map = parent.Map;
-        if (!SignVisibility.ShouldDrawText(text, Props.requiresPower, powerComp != null, powerComp != null && powerComp.PowerOn)
+        SimpleSighSettings settings = SimpleSighMod.Settings;
+        if (!settings.showText || !SignVisibility.ZoomAllows((int)Find.CameraDriver.CurrentZoom, settings.hideTextFromZoom)
+            || !SignVisibility.ShouldDrawText(text, Props.requiresPower, powerComp != null, powerComp != null && powerComp.PowerOn)
             || map == null || parent.Position.Fogged(map) || !SignGlyphSources.TryGetCurrent(out ISignGlyphs glyphs))
         {
             return;

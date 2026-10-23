@@ -33,4 +33,20 @@
   <SimpleSigh_AddFavorite>Save colour as favourite</SimpleSigh_AddFavorite>
   <SimpleSigh_RemoveFavorite>Remove from favourites</SimpleSigh_RemoveFavorite>
   <SimpleSigh_Preview>Preview</SimpleSigh_Preview>
+  <SimpleSigh_SettingShowText>Show sign text</SimpleSigh_SettingShowText>
+  <SimpleSigh_SettingShowTextDesc>Turns the text of every sign on or off. A key for this can be assigned in Options &gt; Keyboard.</SimpleSigh_SettingShowTextDesc>
+  <SimpleSigh_SettingHideFromZoom>Hide sign text when zoomed out:</SimpleSigh_SettingHideFromZoom>
+  <SimpleSigh_ZoomNever>Never</SimpleSigh_ZoomNever>
+  <SimpleSigh_ZoomMiddle>From medium zoom</SimpleSigh_ZoomMiddle>
+  <SimpleSigh_ZoomFar>From far zoom</SimpleSigh_ZoomFar>
+  <SimpleSigh_ZoomFurthest>Only at the furthest zoom</SimpleSigh_ZoomFurthest>
+  <SimpleSigh_SettingDefaultAutoWrap>New single-line signs wrap text automatically</SimpleSigh_SettingDefaultAutoWrap>
+  <SimpleSigh_SettingUseDefaultColor>Use my own text colour for new signs</SimpleSigh_SettingUseDefaultColor>
+  <SimpleSigh_SettingUseDefaultColorDesc>Applies to newly built signs only (not electronic signs, which keep their LED colour). Existing signs are not changed.</SimpleSigh_SettingUseDefaultColorDesc>
+  <SimpleSigh_ChooseDefaultColor>Choose colour...</SimpleSigh_ChooseDefaultColor>
+  <SimpleSigh_SettingFavorites>Favourite colours ({0} / {1}):</SimpleSigh_SettingFavorites>
+  <SimpleSigh_ClickToRemoveFavorite>Click to remove from favourites</SimpleSigh_ClickToRemoveFavorite>
+  <SimpleSigh_SettingHotkeyHint>Tip: assign "toggle sign text (Simple Sigh)" in Options &gt; Keyboard to show or hide all sign text with one key.</SimpleSigh_SettingHotkeyHint>
+  <SimpleSigh_TextShown>Sign text shown.</SimpleSigh_TextShown>
+  <SimpleSigh_TextHidden>Sign text hidden.</SimpleSigh_TextHidden>
 </LanguageData>

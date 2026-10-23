@@ -39,6 +39,15 @@ def iter_files(base, suffix):
                 yield os.path.join(dirpath, name)
 
 
+def all_defs(tag):
+    found = []
+    for file in iter_files(path("Defs"), ".xml"):
+        for node in ET.parse(file).getroot():
+            if node.tag == tag:
+                found.append(node)
+    return found
+
+
 def all_thing_defs():
     defs = []
     for file in iter_files(path("Defs"), ".xml"):
@@ -253,6 +262,24 @@ class ElectronicSignTests(unittest.TestCase):
             self.assertEqual(props.findtext(field), "true", field)
         self.assertEqual(props.findtext("maxElements"), "256")
         self.assertTrue(props.findtext("defaultColor"))
+
+
+class SettingsDefTests(unittest.TestCase):
+    def test_toggle_text_key_binding_exists(self):
+        keys = {d.findtext("defName"): d for d in all_defs("KeyBindingDef")}
+        self.assertIn("SimpleSigh_ToggleSignText", keys)
+        key = keys["SimpleSigh_ToggleSignText"]
+        self.assertTrue(key.findtext("label"))
+        self.assertTrue(key.findtext("category"))
+
+    def test_every_mod_def_has_japanese_label(self):
+        injected_dir = path("Languages", "Japanese", "DefInjected")
+        for tag in ("KeyBindingDef", "MainButtonDef"):
+            for d in all_defs(tag):
+                file = os.path.join(injected_dir, tag, "SimpleSigh.xml")
+                self.assertTrue(os.path.isfile(file), file)
+                injected = {c.tag for c in ET.parse(file).getroot()}
+                self.assertIn(d.findtext("defName") + ".label", injected)
 
 
 class LanguageTests(unittest.TestCase):
@@ -507,7 +534,9 @@ class SignCompTests(unittest.TestCase):
         used = set()
         for text in source_text().values():
             used.update(re.findall(r'"(SimpleSigh_[A-Za-z0-9_]+)"', text))
-        def_names = {d.findtext("defName") for d in all_thing_defs()}
+        def_names = set()
+        for file in iter_files(path("Defs"), ".xml"):
+            def_names.update(n.findtext("defName") for n in ET.parse(file).getroot() if n.findtext("defName"))
         used -= def_names
         self.assertTrue(used, "no keyed strings found in Source")
         for language in ("English", "Japanese"):
@@ -545,6 +574,10 @@ class CoreReferenceTests(unittest.TestCase):
 
     def assert_core(self, tag, name):
         self.assertTrue((tag, name) in self.core_def_names, f"{tag} {name} missing from Core")
+
+    def test_key_binding_categories_exist(self):
+        for d in all_defs("KeyBindingDef"):
+            self.assert_core("KeyBindingCategoryDef", d.findtext("category"))
 
     def test_parents_exist(self):
         for d in all_thing_defs():

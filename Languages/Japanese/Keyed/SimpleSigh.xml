@@ -33,4 +33,20 @@
   <SimpleSigh_AddFavorite>この色をお気に入りに保存</SimpleSigh_AddFavorite>
   <SimpleSigh_RemoveFavorite>お気に入りから削除</SimpleSigh_RemoveFavorite>
   <SimpleSigh_Preview>プレビュー</SimpleSigh_Preview>
+  <SimpleSigh_SettingShowText>看板の文字を表示する</SimpleSigh_SettingShowText>
+  <SimpleSigh_SettingShowTextDesc>すべての看板の文字の表示・非表示を切り替えます。設定 &gt; キーボード でキーを割り当てられます。</SimpleSigh_SettingShowTextDesc>
+  <SimpleSigh_SettingHideFromZoom>ズームアウト時に看板の文字を隠す：</SimpleSigh_SettingHideFromZoom>
+  <SimpleSigh_ZoomNever>隠さない</SimpleSigh_ZoomNever>
+  <SimpleSigh_ZoomMiddle>中程度のズームから</SimpleSigh_ZoomMiddle>
+  <SimpleSigh_ZoomFar>遠いズームから</SimpleSigh_ZoomFar>
+  <SimpleSigh_ZoomFurthest>最も遠いズームのときだけ</SimpleSigh_ZoomFurthest>
+  <SimpleSigh_SettingDefaultAutoWrap>新しい一行看板で自動折り返しを有効にする</SimpleSigh_SettingDefaultAutoWrap>
+  <SimpleSigh_SettingUseDefaultColor>新しい看板の文字色を自分で決める</SimpleSigh_SettingUseDefaultColor>
+  <SimpleSigh_SettingUseDefaultColorDesc>これから建てる看板にだけ適用されます（電光掲示板はLEDの色のまま）。既存の看板は変わりません。</SimpleSigh_SettingUseDefaultColorDesc>
+  <SimpleSigh_ChooseDefaultColor>色を選ぶ…</SimpleSigh_ChooseDefaultColor>
+  <SimpleSigh_SettingFavorites>お気に入りの色（{0} / {1}）：</SimpleSigh_SettingFavorites>
+  <SimpleSigh_ClickToRemoveFavorite>クリックでお気に入りから削除</SimpleSigh_ClickToRemoveFavorite>
+  <SimpleSigh_SettingHotkeyHint>ヒント：設定 &gt; キーボード で「看板の文字の表示切り替え（Simple Sigh）」にキーを割り当てると、1キーで全看板の文字を表示・非表示にできます。</SimpleSigh_SettingHotkeyHint>
+  <SimpleSigh_TextShown>看板の文字を表示しました。</SimpleSigh_TextShown>
+  <SimpleSigh_TextHidden>看板の文字を非表示にしました。</SimpleSigh_TextHidden>
 </LanguageData>

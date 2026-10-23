@@ -31,5 +31,11 @@ public static class SignVisibility
         return !requiresPower || (hasPowerComp && powerOn);
     }
 
+    /// <summary>
+    /// The player can hide sign text when zoomed out: <paramref name="hideFrom"/> is the first
+    /// CameraZoomRange index (Closest 0 … Furthest 4) without text, or -1 to always show it.
+    /// </summary>
+    public static bool ZoomAllows(int currentZoom, int hideFrom) => hideFrom < 0 || currentZoom < hideFrom;
+
     public static int RenderQueueFor(bool glowsInDark) => glowsInDark ? PostLightQueue : LitQueue;
 }

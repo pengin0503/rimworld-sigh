@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!-- Unbound by default; assign a key in Options > Keyboard. Shows or hides the text of every sign. -->
+  <KeyBindingDef>
+    <defName>SimpleSigh_ToggleSignText</defName>
+    <label>toggle sign text (Simple Sigh)</label>
+    <category>Game</category>
+    <defaultKeyCodeA>None</defaultKeyCodeA>
+  </KeyBindingDef>
+
+</Defs>

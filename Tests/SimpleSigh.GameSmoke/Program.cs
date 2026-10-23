@@ -97,6 +97,32 @@ public static class Program
             }
         }
 
+        foreach (string file in Directory.GetFiles(Path.Combine(repo, "Defs"), "*.xml", SearchOption.AllDirectories))
+        {
+            var doc = new XmlDocument();
+            doc.Load(file);
+            foreach (XmlElement def in doc.DocumentElement.ChildNodes.OfType<XmlElement>().Where(e => e.Name != "ThingDef"))
+            {
+                string name = def["defName"]?.InnerText ?? def.GetAttribute("Name");
+                Check($"{Path.GetFileName(file)} {def.Name} {name}: type and fields exist in 1.7", () =>
+                {
+                    Type defType = typeof(ThingDef).Assembly.GetType("Verse." + def.Name) ?? typeof(ThingDef).Assembly.GetType("RimWorld." + def.Name);
+                    Require(defType != null && typeof(Def).IsAssignableFrom(defType), $"{def.Name} is not a 1.7 Def type");
+                    RequireFields(def, defType, name);
+                    foreach (string typeField in new[] { "tabWindowClass", "workerClass" })
+                    {
+                        string typeName = def[typeField]?.InnerText;
+                        if (typeName != null)
+                        {
+                            Type resolved = typeof(CompSignText).Assembly.GetType(typeName) ?? typeof(ThingDef).Assembly.GetType(typeName)
+                                ?? typeof(ThingDef).Assembly.GetType("RimWorld." + typeName) ?? typeof(ThingDef).Assembly.GetType("Verse." + typeName);
+                            Require(resolved != null, $"{typeField} {typeName} not found");
+                        }
+                    }
+                });
+            }
+        }
+
         Check("CompSignText.PostExposeData writes through the real 1.7 ScribeSaver", () =>
         {
             const string text = "研究室 C:\\new\n2行目  ";
@@ -123,6 +149,31 @@ public static class Program
             {
                 Require(saved.SelectSingleNode("/sign/" + key) == null, key + " written although it has its default value");
             }
+            File.Delete(file);
+        });
+
+        Check("v0.2 GameComponents have the (Game) constructor Game.FillComponents needs", () =>
+        {
+            Require(typeof(Rendering.GameComponent_SignHotkeys).GetConstructor(new[] { typeof(Game) }) != null, "GameComponent_SignHotkeys");
+        });
+
+        Check("SimpleSighSettings writes through the real 1.7 ScribeSaver", () =>
+        {
+            var settings = new SimpleSighSettings { showText = false, hideTextFromZoom = 3, useCustomDefaultColor = true };
+            settings.AddFavorite(new UnityEngine.Color(1f, 0f, 0f));
+            settings.AddFavorite(new UnityEngine.Color(0f, 0f, 1f));
+            settings.AddFavorite(new UnityEngine.Color(1f, 0f, 0f));
+            Require(settings.favoriteColors.Count == 2, "favourite colours not de-duplicated");
+            string file = Path.Combine(Path.GetTempPath(), "simplesigh-smoke-settings.xml");
+            Scribe.saver.InitSaving(file, "settings");
+            settings.ExposeData();
+            Scribe.saver.FinalizeSaving();
+            var saved = new XmlDocument();
+            saved.Load(file);
+            Console.WriteLine($"      saved XML: {saved.DocumentElement.InnerXml}");
+            Require(saved.SelectSingleNode("/settings/showText")?.InnerText == "False", "showText not written");
+            Require(saved.SelectSingleNode("/settings/hideTextFromZoom")?.InnerText == "3", "hideTextFromZoom not written");
+            Require(saved.SelectNodes("/settings/favoriteColors/li").Count == 2, "favourite colours not written");
             File.Delete(file);
         });
 
