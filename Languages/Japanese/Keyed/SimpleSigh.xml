@@ -17,4 +17,20 @@
   <SimpleSigh_MissingGlyphs>看板のフォントにない文字があり、「?」で表示されています（保存された文字はそのままです）。</SimpleSigh_MissingGlyphs>
   <SimpleSigh_AutoWrap>長い文字を自動で折り返して大きく表示する</SimpleSigh_AutoWrap>
   <SimpleSigh_LongTextHint>1×1の看板では長い文字は小さくなります。長い文には2×1の掲示板（複数行）がおすすめです。</SimpleSigh_LongTextHint>
+  <SimpleSigh_EditTitleMany>{0}個の看板を編集</SimpleSigh_EditTitleMany>
+  <SimpleSigh_PasteClipboard>クリップボードの文字に置き換え</SimpleSigh_PasteClipboard>
+  <SimpleSigh_CopyClipboard>文字をクリップボードにコピー</SimpleSigh_CopyClipboard>
+  <SimpleSigh_CopiedToClipboard>看板の文字をクリップボードにコピーしました。</SimpleSigh_CopiedToClipboard>
+  <SimpleSigh_ClipboardEmpty>クリップボードに文字がありません。</SimpleSigh_ClipboardEmpty>
+  <SimpleSigh_Alignment>配置</SimpleSigh_Alignment>
+  <SimpleSigh_AlignLeft>左</SimpleSigh_AlignLeft>
+  <SimpleSigh_AlignCenter>中央</SimpleSigh_AlignCenter>
+  <SimpleSigh_AlignRight>右</SimpleSigh_AlignRight>
+  <SimpleSigh_AlignTop>上</SimpleSigh_AlignTop>
+  <SimpleSigh_AlignMiddle>中</SimpleSigh_AlignMiddle>
+  <SimpleSigh_AlignBottom>下</SimpleSigh_AlignBottom>
+  <SimpleSigh_MoreColors>その他の色…</SimpleSigh_MoreColors>
+  <SimpleSigh_AddFavorite>この色をお気に入りに保存</SimpleSigh_AddFavorite>
+  <SimpleSigh_RemoveFavorite>お気に入りから削除</SimpleSigh_RemoveFavorite>
+  <SimpleSigh_Preview>プレビュー</SimpleSigh_Preview>
 </LanguageData>

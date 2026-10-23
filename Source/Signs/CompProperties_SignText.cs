@@ -41,6 +41,15 @@ public class CompProperties_SignText : CompProperties
     /// <summary>Keep the building's CompGlower colour equal to the text colour.</summary>
     public bool syncGlowColor;
 
+    /// <summary>Animated display modes (blink, scroll) are offered in the editor.</summary>
+    public bool allowEffects;
+
+    /// <summary>New signs of this def start with a text shadow (floor signs).</summary>
+    public bool defaultShadow;
+
+    /// <summary>Colour of the display panel, used by the editor preview (the texture itself is not read).</summary>
+    public Color panelColor = new Color(0.925f, 0.894f, 0.808f, 1f);
+
     public CompProperties_SignText()
     {
         compClass = typeof(CompSignText);

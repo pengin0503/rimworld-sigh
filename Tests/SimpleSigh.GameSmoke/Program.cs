@@ -118,6 +118,35 @@ public static class Program
             Require(saved.SelectSingleNode("/sign/simpleSighColor") != null, "colour not written");
             Require(saved.SelectSingleNode("/sign/simpleSighScale")?.InnerText == "0.5", "scale not written");
             Require(saved.SelectSingleNode("/sign/simpleSighAutoWrap")?.InnerText == "False", "auto wrap not written");
+            // v0.1 look: the v0.2 option keys are omitted, so older versions and old saves agree.
+            foreach (string key in new[] { "simpleSighHAlign", "simpleSighVAlign", "simpleSighShadow", "simpleSighEffect" })
+            {
+                Require(saved.SelectSingleNode("/sign/" + key) == null, key + " written although it has its default value");
+            }
+            File.Delete(file);
+        });
+
+        Check("v0.2 style options are written through the real 1.7 ScribeSaver; effects only where allowed", () =>
+        {
+            var style = new Layout.SignTextStyle(0.8f, true, Layout.SignHAlign.Left, Layout.SignVAlign.Bottom, true, Layout.SignEffect.Scroll);
+            var led = new CompSignText();
+            led.Initialize(new CompProperties_SignText { maxElements = 256, multiline = true, allowEffects = true });
+            led.Apply("LED", UnityEngine.Color.white, style);
+            var plain = new CompSignText();
+            plain.Initialize(new CompProperties_SignText());
+            plain.Apply("看板", UnityEngine.Color.white, style);
+            Require(plain.Style.Effect == Layout.SignEffect.None, "a sign without allowEffects accepted an effect");
+            string file = Path.Combine(Path.GetTempPath(), "simplesigh-smoke-style.xml");
+            Scribe.saver.InitSaving(file, "sign");
+            led.PostExposeData();
+            Scribe.saver.FinalizeSaving();
+            var saved = new XmlDocument();
+            saved.Load(file);
+            Console.WriteLine($"      saved XML: {saved.DocumentElement.InnerXml}");
+            Require(saved.SelectSingleNode("/sign/simpleSighHAlign")?.InnerText == "Left", "horizontal alignment not written");
+            Require(saved.SelectSingleNode("/sign/simpleSighVAlign")?.InnerText == "Bottom", "vertical alignment not written");
+            Require(saved.SelectSingleNode("/sign/simpleSighShadow")?.InnerText == "True", "shadow not written");
+            Require(saved.SelectSingleNode("/sign/simpleSighEffect")?.InnerText == "Scroll", "effect not written");
             File.Delete(file);
         });
 

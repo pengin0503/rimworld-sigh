@@ -1,4 +1,5 @@
 using RimWorld;
+using SimpleSigh.Layout;
 using SimpleSigh.Text;
 using UnityEngine;
 using Verse;
@@ -10,8 +11,7 @@ public static class SignClipboard
 {
     private static string text;
     private static Color color;
-    private static float scale;
-    private static bool autoWrap;
+    private static SignTextStyle style;
 
     public static bool HasContent => text != null;
 
@@ -19,8 +19,7 @@ public static class SignClipboard
     {
         text = source.Text;
         color = source.TextColor;
-        scale = source.Scale;
-        autoWrap = source.AutoWrap;
+        style = source.Style;
         Messages.Message("SimpleSigh_Copied".Translate(), source.parent, MessageTypeDefOf.SilentInput, historical: false);
     }
 
@@ -37,6 +36,6 @@ public static class SignClipboard
                 target.parent, MessageTypeDefOf.RejectInput, historical: false);
             return;
         }
-        target.Apply(normalized, color, scale, autoWrap);
+        target.Apply(normalized, color, style);
     }
 }

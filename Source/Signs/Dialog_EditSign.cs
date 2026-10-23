@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using RimWorld;
+using SimpleSigh.Layout;
 using SimpleSigh.Text;
+using SimpleSigh.Gui;
 using UnityEngine;
 using Verse;
 using GameText = Verse.Text;
@@ -8,14 +10,18 @@ using GameText = Verse.Text;
 namespace SimpleSigh.Signs;
 
 /// <summary>
-/// Editor window. Works on a <see cref="SignEditSession"/> copy; the sign is only changed
-/// when OK succeeds. Cancel, Escape or clicking the close button leave the sign untouched.
+/// Editor window for one or more signs. Works on a <see cref="SignEditSession"/> copy; the signs are only
+/// changed when OK succeeds. Cancel, Escape or the close button leave every sign untouched. With several
+/// signs the strictest limits of all of them apply, so the same text is valid for each.
 /// </summary>
 public class Dialog_EditSign : Window
 {
     private const string TextControlName = "SimpleSighTextField";
     private const float RowGap = 8f;
+    private const float RowHeight = 28f;
     private const float ButtonHeight = 35f;
+    private const float MultilineBoxHeight = 140f;
+    private const float PreviewHeight = 120f;
 
     /// <summary>
     /// From seven characters on, a 1x1 sign's rows fall to about 0.16 cell or less even with automatic
@@ -33,21 +39,43 @@ public class Dialog_EditSign : Window
         new Color(0.42f, 0.27f, 0.14f),
     };
 
-    private readonly CompSignText sign;
+    private readonly List<CompSignText> signs;
     private readonly SignEditSession session;
+    private readonly SignPreviewDrawer preview = new SignPreviewDrawer();
     private Color color;
     private float scale;
     private bool autoWrap;
+    private SignHAlign hAlign;
+    private SignVAlign vAlign;
+    private bool shadow;
+    private SignEffect effect;
     private bool focused;
+    private Vector2 textScroll;
 
-    public Dialog_EditSign(CompSignText sign)
+    public Dialog_EditSign(CompSignText sign) : this(new List<CompSignText> { sign })
     {
-        this.sign = sign;
-        CompProperties_SignText props = sign.Props;
-        session = new SignEditSession(sign.Text, props.maxElements, props.multiline);
-        color = sign.TextColor;
-        scale = sign.Scale;
-        autoWrap = sign.AutoWrap;
+    }
+
+    /// <param name="signs">The clicked sign first; its values fill the editor.</param>
+    public Dialog_EditSign(List<CompSignText> signs)
+    {
+        this.signs = signs;
+        var rules = new List<SignEditRules>(signs.Count);
+        foreach (CompSignText sign in signs)
+        {
+            rules.Add(new SignEditRules(sign.Props.maxElements, sign.Props.multiline));
+        }
+        SignEditRules combined = SignEditRules.Combine(rules);
+        CompSignText primary = signs[0];
+        session = new SignEditSession(primary.Text, combined.MaxElements, combined.Multiline);
+        color = primary.TextColor;
+        SignTextStyle style = primary.Style;
+        scale = style.Scale;
+        autoWrap = style.AutoWrap;
+        hAlign = style.HAlign;
+        vAlign = style.VAlign;
+        shadow = style.Shadow;
+        effect = style.Effect;
         doCloseX = true;
         forcePause = true;
         closeOnAccept = false;
@@ -55,7 +83,11 @@ public class Dialog_EditSign : Window
         absorbInputAroundWindow = true;
     }
 
-    public override Vector2 InitialSize => new Vector2(520f, session.Multiline ? 500f : 440f);
+    public override Vector2 InitialSize => new Vector2(640f, session.Multiline ? 760f : 660f);
+
+    private CompSignText Primary => signs[0];
+
+    private SignTextStyle CurrentStyle => new SignTextStyle(scale, autoWrap, hAlign, vAlign, shadow, effect);
 
     public override void DoWindowContents(Rect inRect)
     {
@@ -69,46 +101,42 @@ public class Dialog_EditSign : Window
 
         float y = inRect.y;
         GameText.Font = GameFont.Medium;
-        Widgets.Label(new Rect(inRect.x, y, inRect.width, 35f), "SimpleSigh_EditTitle".Translate(sign.parent.LabelCap));
+        string title = signs.Count == 1
+            ? "SimpleSigh_EditTitle".Translate(Primary.parent.LabelCap).ToString()
+            : "SimpleSigh_EditTitleMany".Translate(signs.Count).ToString();
+        Widgets.Label(new Rect(inRect.x, y, inRect.width, 35f), title);
         y += 35f + RowGap;
-
         GameText.Font = GameFont.Small;
-        float inputHeight = session.Multiline ? 150f : 35f;
-        Rect inputRect = new Rect(inRect.x, y, inRect.width, inputHeight);
-        GUI.SetNextControlName(TextControlName);
-        session.Draft = session.Multiline ? Widgets.TextArea(inputRect, session.Draft) : Widgets.TextField(inputRect, session.Draft);
-        if (!focused)
-        {
-            UI.FocusControl(TextControlName, this);
-            focused = true;
-        }
-        y += inputHeight + 4f;
 
+        y = DrawTextInput(inRect, y);
+        y = DrawClipboardRow(new Rect(inRect.x, y, inRect.width, RowHeight));
         DrawStatusRow(new Rect(inRect.x, y, inRect.width, 24f));
         y += 24f + RowGap;
 
         if (!session.Multiline)
         {
-            Widgets.CheckboxLabeled(new Rect(inRect.x, y, inRect.width, 24f), "SimpleSigh_AutoWrap".Translate(), ref autoWrap);
-            y += 24f + 4f;
+            Widgets.CheckboxLabeled(new Rect(inRect.x, y, inRect.width / 2f - 8f, 24f), "SimpleSigh_AutoWrap".Translate(), ref autoWrap);
             if (session.ElementCount > LongTextHintElements)
             {
                 Color previous = GUI.color;
                 GUI.color = Color.gray;
-                Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "SimpleSigh_LongTextHint".Translate());
+                Widgets.Label(new Rect(inRect.x + inRect.width / 2f, y, inRect.width / 2f, 24f), "SimpleSigh_LongTextHint".Translate());
                 GUI.color = previous;
             }
             y += 24f + RowGap;
         }
 
-        Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "SimpleSigh_TextColor".Translate());
-        y += 24f;
-        Widgets.ColorSelector(new Rect(inRect.x, y, inRect.width, 80f), ref color, Palette, out float paletteHeight);
-        y += paletteHeight + RowGap;
+        y = DrawAlignmentRow(new Rect(inRect.x, y, inRect.width, RowHeight)) + RowGap;
+        y = DrawColorSection(inRect, y) + RowGap;
 
         string sizeLabel = "SimpleSigh_TextSize".Translate(Mathf.RoundToInt(scale * 100f));
         scale = Widgets.HorizontalSlider(new Rect(inRect.x, y, inRect.width, 30f), scale,
             CompSignText.MinScale, CompSignText.MaxScale, middleAlignment: true, label: sizeLabel, roundTo: 0.05f);
+        y += 30f + RowGap;
+
+        Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "SimpleSigh_Preview".Translate());
+        y += 24f;
+        preview.Draw(new Rect(inRect.x, y, inRect.width, PreviewHeight), Primary, session.Draft, color, CurrentStyle);
 
         Rect buttons = new Rect(inRect.x, inRect.yMax - ButtonHeight, inRect.width, ButtonHeight);
         if (Widgets.ButtonText(buttons.LeftHalf().ContractedBy(4f, 0f), "CancelButton".Translate()))
@@ -125,6 +153,116 @@ public class Dialog_EditSign : Window
     public override void OnAcceptKeyPressed()
     {
         // Enter inserts a line break in multiline editors; single-line editors handle it in DoWindowContents.
+    }
+
+    private float DrawTextInput(Rect inRect, float y)
+    {
+        GUI.SetNextControlName(TextControlName);
+        if (session.Multiline)
+        {
+            var outRect = new Rect(inRect.x, y, inRect.width, MultilineBoxHeight);
+            float innerWidth = outRect.width - 16f;
+            float innerHeight = Mathf.Max(outRect.height, GameText.CalcHeight(session.Draft, innerWidth) + 12f);
+            var viewRect = new Rect(0f, 0f, innerWidth, innerHeight);
+            Widgets.BeginScrollView(outRect, ref textScroll, viewRect);
+            session.Draft = Widgets.TextArea(viewRect, session.Draft);
+            Widgets.EndScrollView();
+            y += MultilineBoxHeight;
+        }
+        else
+        {
+            session.Draft = Widgets.TextField(new Rect(inRect.x, y, inRect.width, 35f), session.Draft);
+            y += 35f;
+        }
+        if (!focused)
+        {
+            UI.FocusControl(TextControlName, this);
+            focused = true;
+        }
+        return y + 4f;
+    }
+
+    private float DrawClipboardRow(Rect rect)
+    {
+        float width = (rect.width - 8f) / 2f;
+        if (Widgets.ButtonText(new Rect(rect.x, rect.y, width, rect.height), "SimpleSigh_PasteClipboard".Translate()))
+        {
+            string clip = GUIUtility.systemCopyBuffer;
+            if (string.IsNullOrEmpty(clip))
+            {
+                Messages.Message("SimpleSigh_ClipboardEmpty".Translate(), MessageTypeDefOf.RejectInput, historical: false);
+            }
+            else
+            {
+                // Validation (length, line breaks, forbidden characters) shows in the status row; nothing is cut off.
+                session.Draft = clip;
+            }
+        }
+        if (Widgets.ButtonText(new Rect(rect.x + width + 8f, rect.y, width, rect.height), "SimpleSigh_CopyClipboard".Translate()))
+        {
+            GUIUtility.systemCopyBuffer = session.Draft;
+            Messages.Message("SimpleSigh_CopiedToClipboard".Translate(), MessageTypeDefOf.SilentInput, historical: false);
+        }
+        return rect.yMax + 4f;
+    }
+
+    private float DrawAlignmentRow(Rect rect)
+    {
+        const float labelWidth = 90f;
+        Widgets.Label(new Rect(rect.x, rect.y + 2f, labelWidth, rect.height), "SimpleSigh_Alignment".Translate());
+        float buttonWidth = (rect.width - labelWidth - 16f) / 6f;
+        float x = rect.x + labelWidth;
+        x = AlignButton(ref hAlign, SignHAlign.Left, "SimpleSigh_AlignLeft", x, rect, buttonWidth);
+        x = AlignButton(ref hAlign, SignHAlign.Center, "SimpleSigh_AlignCenter", x, rect, buttonWidth);
+        x = AlignButton(ref hAlign, SignHAlign.Right, "SimpleSigh_AlignRight", x, rect, buttonWidth) + 16f;
+        x = AlignButton(ref vAlign, SignVAlign.Top, "SimpleSigh_AlignTop", x, rect, buttonWidth);
+        x = AlignButton(ref vAlign, SignVAlign.Middle, "SimpleSigh_AlignMiddle", x, rect, buttonWidth);
+        AlignButton(ref vAlign, SignVAlign.Bottom, "SimpleSigh_AlignBottom", x, rect, buttonWidth);
+        return rect.yMax;
+    }
+
+    private static float AlignButton<T>(ref T current, T value, string labelKey, float x, Rect row, float width)
+    {
+        var button = new Rect(x, row.y, width - 2f, row.height);
+        if (Widgets.ButtonText(button, labelKey.Translate()))
+        {
+            current = value;
+        }
+        if (EqualityComparer<T>.Default.Equals(current, value))
+        {
+            Widgets.DrawHighlightSelected(button);
+        }
+        return x + width;
+    }
+
+    private float DrawColorSection(Rect inRect, float y)
+    {
+        Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f), "SimpleSigh_TextColor".Translate());
+        y += 24f;
+        SimpleSighSettings settings = SimpleSighMod.Settings;
+        var choices = new List<Color>(Palette);
+        choices.AddRange(settings.favoriteColors);
+        Widgets.ColorSelector(new Rect(inRect.x, y, inRect.width, 80f), ref color, choices, out float paletteHeight);
+        y += paletteHeight + 4f;
+
+        float width = (inRect.width - 16f) / 3f;
+        if (Widgets.ButtonText(new Rect(inRect.x, y, width, RowHeight), "SimpleSigh_MoreColors".Translate()))
+        {
+            Find.WindowStack.Add(new Dialog_SignColorPicker(color, Primary.Props.defaultColor, choices, picked => color = picked));
+        }
+        bool isFavorite = settings.favoriteColors.Exists(c => SimpleSighSettings.ToRgba(c) == SimpleSighSettings.ToRgba(color));
+        var favoriteRect = new Rect(inRect.x + width + 8f, y, width, RowHeight);
+        if (!isFavorite && Widgets.ButtonText(favoriteRect, "SimpleSigh_AddFavorite".Translate()))
+        {
+            settings.AddFavorite(color);
+            SimpleSighMod.SaveSettings();
+        }
+        if (isFavorite && Widgets.ButtonText(favoriteRect, "SimpleSigh_RemoveFavorite".Translate()))
+        {
+            settings.RemoveFavorite(color);
+            SimpleSighMod.SaveSettings();
+        }
+        return y + RowHeight;
     }
 
     private void DrawStatusRow(Rect rect)
@@ -156,7 +294,11 @@ public class Dialog_EditSign : Window
                 MessageTypeDefOf.RejectInput, historical: false);
             return;
         }
-        sign.Apply(normalized, color, scale, autoWrap);
+        SignTextStyle style = CurrentStyle;
+        foreach (CompSignText sign in signs)
+        {
+            sign.Apply(normalized, color, style);
+        }
         Close();
     }
 }

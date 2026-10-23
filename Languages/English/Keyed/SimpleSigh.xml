@@ -17,4 +17,20 @@
   <SimpleSigh_MissingGlyphs>Some characters are not in the sign font and are shown as "?". The saved text is unchanged.</SimpleSigh_MissingGlyphs>
   <SimpleSigh_AutoWrap>Wrap long text automatically to make it larger</SimpleSigh_AutoWrap>
   <SimpleSigh_LongTextHint>Long text is small on a 1×1 sign. A 2×1 notice board (multi-line) is easier to read.</SimpleSigh_LongTextHint>
+  <SimpleSigh_EditTitleMany>Edit {0} signs</SimpleSigh_EditTitleMany>
+  <SimpleSigh_PasteClipboard>Replace with clipboard text</SimpleSigh_PasteClipboard>
+  <SimpleSigh_CopyClipboard>Copy text to clipboard</SimpleSigh_CopyClipboard>
+  <SimpleSigh_CopiedToClipboard>Sign text copied to the clipboard.</SimpleSigh_CopiedToClipboard>
+  <SimpleSigh_ClipboardEmpty>The clipboard has no text.</SimpleSigh_ClipboardEmpty>
+  <SimpleSigh_Alignment>Alignment</SimpleSigh_Alignment>
+  <SimpleSigh_AlignLeft>Left</SimpleSigh_AlignLeft>
+  <SimpleSigh_AlignCenter>Centre</SimpleSigh_AlignCenter>
+  <SimpleSigh_AlignRight>Right</SimpleSigh_AlignRight>
+  <SimpleSigh_AlignTop>Top</SimpleSigh_AlignTop>
+  <SimpleSigh_AlignMiddle>Middle</SimpleSigh_AlignMiddle>
+  <SimpleSigh_AlignBottom>Bottom</SimpleSigh_AlignBottom>
+  <SimpleSigh_MoreColors>More colours...</SimpleSigh_MoreColors>
+  <SimpleSigh_AddFavorite>Save colour as favourite</SimpleSigh_AddFavorite>
+  <SimpleSigh_RemoveFavorite>Remove from favourites</SimpleSigh_RemoveFavorite>
+  <SimpleSigh_Preview>Preview</SimpleSigh_Preview>
 </LanguageData>
