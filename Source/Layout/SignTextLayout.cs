@@ -14,6 +14,13 @@ public static class SignTextLayout
     public const float MinFitScale = 0.05f;
 
     /// <summary>
+    /// Smallest row height in map cells. Tall (portrait) panels may shrink rows below
+    /// <see cref="MinFitScale"/> of their height down to this, so a sign turned east or west holds the
+    /// same text as when it faces north instead of clipping it.
+    /// </summary>
+    public const float MinLineHeightCells = 0.015f;
+
+    /// <summary>
     /// Automatic wrapping is used only when it makes the text at least this much larger than one row;
     /// for a marginal gain a single row reads more naturally.
     /// </summary>
@@ -91,13 +98,14 @@ public static class SignTextLayout
         // At scale 1 one line fills the panel height.
         float pixelsToWorld = innerHeight / glyphs.LineHeight;
         Func<string, float> measure = s => GlyphQuadBuilder.MeasureLine(s, glyphs) * pixelsToWorld;
+        float minScale = Math.Min(MinFitScale, MinLineHeightCells / innerHeight);
         bool wrap = multiline;
         bool allowWordBreaks = true;
         bool balance = false;
-        SignLayoutResult layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, MinFitScale, wrap: multiline);
+        SignLayoutResult layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, minScale, wrap: multiline);
         if (!multiline && autoWrap)
         {
-            SignLayoutResult wrapped = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, MinFitScale,
+            SignLayoutResult wrapped = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, minScale,
                 wrap: true, allowWordBreaks: false, balanceLines: true);
             if (wrapped.Fits && (!layout.Fits || wrapped.Scale > layout.Scale * AutoWrapMinGain))
             {
@@ -111,8 +119,8 @@ public static class SignTextLayout
         {
             // The user size is a fraction of the largest size that fits; refit with the same wrapping
             // rules so smaller text can use longer lines.
-            float target = Math.Max(MinFitScale, layout.Scale * userScale);
-            layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, Math.Min(MinFitScale, target), target,
+            float target = Math.Max(minScale, layout.Scale * userScale);
+            layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, Math.Min(minScale, target), target,
                 wrap, allowWordBreaks, balance);
         }
         float lineHeight = innerHeight * layout.Scale;

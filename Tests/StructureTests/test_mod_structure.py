@@ -295,6 +295,40 @@ class SettingsDefTests(unittest.TestCase):
                 self.assertIn(d.findtext("defName") + ".label", injected)
 
 
+class LargeSignTests(unittest.TestCase):
+    """3x1 variants of the notice board and the electronic sign (spec: "2x1, later 3x1")."""
+
+    def check_3x1(self, def_name, max_elements):
+        sign = thing_def(def_name)
+        self.assertEqual(sign.findtext("size"), "(3,1)")
+        self.assertEqual(sign.findtext("rotatable"), "true")
+        graphic = sign.find("graphicData")
+        self.assertEqual(graphic.findtext("graphicClass"), "Graphic_Multi")
+        self.assertEqual(graphic.findtext("drawSize"), "(3,1)")
+        north = png_size(path("Textures", graphic.findtext("texPath") + "_north.png"))
+        east = png_size(path("Textures", graphic.findtext("texPath") + "_east.png"))
+        self.assertEqual(north[0], 3 * north[1])
+        self.assertEqual(east[1], 3 * east[0])
+        props = comp_props(sign, SignCompTests.PROPS)
+        self.assertEqual(props.findtext("maxElements"), str(max_elements))
+        self.assertEqual(props.findtext("multiline"), "true")
+        self.assertTrue(props.findtext("panelRectHorizontal"))
+        return sign, props
+
+    def test_large_notice_board(self):
+        sign, _ = self.check_3x1("SimpleSigh_NoticeBoardLarge", 384)
+        self.assertTrue(STUFF_CATEGORIES.issubset({li.text for li in sign.find("stuffCategories")}))
+
+    def test_large_electronic_sign(self):
+        sign, props = self.check_3x1("SimpleSigh_ElectronicSignLarge", 384)
+        self.assertEqual({li.text for li in sign.find("stuffCategories")}, {"Metallic"})
+        self.assertEqual(sign.findtext("costList/ComponentIndustrial"), "3")
+        for field in ("requiresPower", "glowsInDark", "syncGlowColor", "allowEffects"):
+            self.assertEqual(props.findtext(field), "true", field)
+        power = comp_props(sign, "CompProperties_Power")
+        self.assertEqual(power.findtext("basePowerConsumption"), "60")
+
+
 class LanguageTests(unittest.TestCase):
     REQUIRED = {"SimpleSigh_EditText", "SimpleSigh_InvalidText"}
 

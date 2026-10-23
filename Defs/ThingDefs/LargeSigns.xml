@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!--
+    3x1 variants of the notice board and the electronic sign. Same rules as the 2x1 versions:
+    landscape art for north/south, portrait art for east/west (west mirrors east), text always upright.
+  -->
+  <ThingDef ParentName="SimpleSigh_SignBase">
+    <defName>SimpleSigh_NoticeBoardLarge</defName>
+    <label>large notice board</label>
+    <description>A wide standing board for long notices. Text can span several lines; long lines wrap and shrink to fit the board. Select it and use "Edit text".</description>
+    <graphicData>
+      <texPath>Things/Building/SimpleNoticeBoard3</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(3,1)</drawSize>
+      <damageData>
+        <rect>(0.05,0.25,2.9,0.7)</rect>
+      </damageData>
+    </graphicData>
+    <size>(3,1)</size>
+    <rotatable>true</rotatable>
+    <defaultPlacingRot>North</defaultPlacingRot>
+    <costStuffCount>70</costStuffCount>
+    <statBases>
+      <MaxHitPoints>160</MaxHitPoints>
+      <WorkToBuild>1300</WorkToBuild>
+      <Mass>12</Mass>
+    </statBases>
+    <uiOrder>2954</uiOrder>
+    <comps>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>384</maxElements>
+        <multiline>true</multiline>
+        <!-- Match the untinted panels drawn by tools/textures/generate_textures.py -->
+        <panelRect>(0.0469,0.2969,0.9062,0.5625)</panelRect>
+        <panelRectHorizontal>(0.1406,0.1094,0.7188,0.8385)</panelRectHorizontal>
+        <panelPadding>0.06</panelPadding>
+      </li>
+    </comps>
+  </ThingDef>
+
+  <ThingDef ParentName="SimpleSigh_SignBase">
+    <defName>SimpleSigh_ElectronicSignLarge</defName>
+    <label>large electronic sign</label>
+    <description>A wide powered LED board for long messages. The text lights up in the chosen colour while the board has power and goes dark during a power cut; the message is kept and returns with the power. Can blink or scroll. Select it and use "Edit text".</description>
+    <graphicData>
+      <texPath>Things/Building/SimpleElectronicSign3</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <shaderType>CutoutComplex</shaderType>
+      <drawSize>(3,1)</drawSize>
+      <damageData>
+        <rect>(0.05,0.25,2.9,0.7)</rect>
+      </damageData>
+    </graphicData>
+    <size>(3,1)</size>
+    <rotatable>true</rotatable>
+    <defaultPlacingRot>North</defaultPlacingRot>
+    <stuffCategories Inherit="False">
+      <li>Metallic</li>
+    </stuffCategories>
+    <costStuffCount>60</costStuffCount>
+    <costList>
+      <ComponentIndustrial>3</ComponentIndustrial>
+    </costList>
+    <researchPrerequisites>
+      <li>Electricity</li>
+    </researchPrerequisites>
+    <statBases>
+      <MaxHitPoints>140</MaxHitPoints>
+      <WorkToBuild>2000</WorkToBuild>
+      <Mass>14</Mass>
+      <Flammability>0.5</Flammability>
+    </statBases>
+    <uiOrder>2955</uiOrder>
+    <comps>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>60</basePowerConsumption>
+      </li>
+      <li Class="CompProperties_Flickable" />
+      <li Class="CompProperties_Glower">
+        <glowRadius>3</glowRadius>
+        <glowColor>(255,170,60,0)</glowColor>
+      </li>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>384</maxElements>
+        <multiline>true</multiline>
+        <requiresPower>true</requiresPower>
+        <glowsInDark>true</glowsInDark>
+        <syncGlowColor>true</syncGlowColor>
+        <allowEffects>true</allowEffects>
+        <defaultColor>(1,0.67,0.24)</defaultColor>
+        <panelColor>(0.063,0.071,0.078)</panelColor>
+        <!-- Match the untinted screens drawn by tools/textures/generate_textures.py -->
+        <panelRect>(0.0469,0.2969,0.9062,0.5625)</panelRect>
+        <panelRectHorizontal>(0.1406,0.1094,0.7188,0.8385)</panelRectHorizontal>
+        <panelPadding>0.06</panelPadding>
+      </li>
+    </comps>
+  </ThingDef>
+
+</Defs>

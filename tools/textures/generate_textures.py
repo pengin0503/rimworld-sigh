@@ -181,6 +181,30 @@ def electronic_portrait(tex, mask):
     return led_board(tex, mask, 6, 8, 122, 226, 3, 12)
 
 
+def notice_board_landscape3(tex, mask):
+    post(tex, mask, 52, 92, 68, 126)
+    post(tex, mask, 316, 92, 332, 126)
+    return board(tex, mask, 6, 6, 378, 102, 3, 12)
+
+
+def notice_board_portrait3(tex, mask):
+    post(tex, mask, 22, 344, 38, 382)
+    post(tex, mask, 90, 344, 106, 382)
+    return board(tex, mask, 6, 8, 122, 354, 3, 12)
+
+
+def electronic_landscape3(tex, mask):
+    post(tex, mask, 52, 92, 68, 126)
+    post(tex, mask, 316, 92, 332, 126)
+    return led_board(tex, mask, 6, 6, 378, 102, 3, 12)
+
+
+def electronic_portrait3(tex, mask):
+    post(tex, mask, 22, 344, 38, 382)
+    post(tex, mask, 90, 344, 106, 382)
+    return led_board(tex, mask, 6, 8, 122, 354, 3, 12)
+
+
 def sign_list_icon():
     """White silhouette for the minimized main-tab button, like vanilla's UI/Buttons/MainButtons icons."""
     white, clear = (255, 255, 255, 255), CLEAR
@@ -207,6 +231,10 @@ def main():
     rects["SimpleNoticeBoard (east/west)"] = east
     rects["SimpleElectronicSign (north/south)"] = make("SimpleElectronicSign_north", 256, 128, electronic_landscape, "m")
     rects["SimpleElectronicSign (east/west)"] = make("SimpleElectronicSign_east", 128, 256, electronic_portrait, "m")
+    rects["SimpleNoticeBoard3 (north/south)"] = make("SimpleNoticeBoard3_north", 384, 128, notice_board_landscape3, "m")
+    rects["SimpleNoticeBoard3 (east/west)"] = make("SimpleNoticeBoard3_east", 128, 384, notice_board_portrait3, "m")
+    rects["SimpleElectronicSign3 (north/south)"] = make("SimpleElectronicSign3_north", 384, 128, electronic_landscape3, "m")
+    rects["SimpleElectronicSign3 (east/west)"] = make("SimpleElectronicSign3_east", 128, 384, electronic_portrait3, "m")
     for key, value in rects.items():
         print(f"{key}: panelRect=({value[0]},{value[1]},{value[2]},{value[3]})")
 

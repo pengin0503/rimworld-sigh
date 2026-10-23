@@ -119,4 +119,37 @@ public class SignTextStyleTests
         }
         Assert.Equal(key, new SignRenderKey("研究室", 1u, 0, 1, 2, 3, Style()));
     }
+
+    [Theory]
+    [InlineData(0)] // 3x1 landscape (north)
+    [InlineData(1)] // 1x3 portrait (east)
+    public void LargeBoardFits384CharactersInBothOrientations(int rotation)
+    {
+        var north = new PanelRect(0.0469f, 0.2969f, 0.9062f, 0.5625f);
+        var east = new PanelRect(0.1406f, 0.1094f, 0.7188f, 0.8385f);
+        PanelPlacement panel = SignPanelGeometry.Place(north, east, 3f, 1f, rotation, 0f, 0f, horizontalUsesRotatedSize: true);
+        string text = string.Concat(Enumerable.Repeat("本日の作業予定：畑の収穫と倉庫の整理。", 25)).Substring(0, 384);
+        SignTextLayout.Result r = SignTextLayout.Build(text, panel, 0.06f, true, SignTextStyle.Default, glyphs);
+        Assert.True(r.Fits);
+        Assert.Equal(384, r.Quads.Count);
+        foreach (GlyphQuad q in r.Quads)
+        {
+            Assert.InRange(q.X0, -panel.Width / 2 - 1e-4f, panel.Width / 2 + 1e-4f);
+            Assert.InRange(q.X1, -panel.Width / 2 - 1e-4f, panel.Width / 2 + 1e-4f);
+            Assert.InRange(q.Y0, -panel.Height / 2 - 1e-4f, panel.Height / 2 + 1e-4f);
+            Assert.InRange(q.Y1, -panel.Height / 2 - 1e-4f, panel.Height / 2 + 1e-4f);
+        }
+    }
+
+    [Fact]
+    public void NoticeBoardTurnedEastFitsAFull256CharacterNotice()
+    {
+        var north = new PanelRect(0.0703f, 0.2969f, 0.8594f, 0.5625f);
+        var east = new PanelRect(0.1406f, 0.1641f, 0.7188f, 0.7578f);
+        PanelPlacement panel = SignPanelGeometry.Place(north, east, 2f, 1f, 1, 0f, 0f, horizontalUsesRotatedSize: true);
+        string text = string.Concat(Enumerable.Repeat("本日の作業予定：畑の収穫と倉庫の整理。", 15)).Substring(0, 256);
+        SignTextLayout.Result r = SignTextLayout.Build(text, panel, 0.06f, true, SignTextStyle.Default, glyphs);
+        Assert.True(r.Fits);
+        Assert.Equal(256, r.Quads.Count);
+    }
 }
