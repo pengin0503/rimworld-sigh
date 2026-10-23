@@ -272,6 +272,19 @@ class SettingsDefTests(unittest.TestCase):
         self.assertTrue(key.findtext("label"))
         self.assertTrue(key.findtext("category"))
 
+    def test_sign_list_tab_is_a_minimized_icon_button(self):
+        buttons = {d.findtext("defName"): d for d in all_defs("MainButtonDef")}
+        self.assertIn("SimpleSigh_Signs", buttons)
+        button = buttons["SimpleSigh_Signs"]
+        self.assertEqual(button.findtext("minimized"), "true")
+        icon = path("Textures", button.findtext("iconPath") + ".png")
+        self.assertTrue(os.path.isfile(icon), icon)
+        cls = button.findtext("tabWindowClass")
+        namespace, _, name = cls.rpartition(".")
+        sources = "\n".join(source_text().values())
+        self.assertIn(f"namespace {namespace};", sources)
+        self.assertIn(f"class {name}", sources)
+
     def test_every_mod_def_has_japanese_label(self):
         injected_dir = path("Languages", "Japanese", "DefInjected")
         for tag in ("KeyBindingDef", "MainButtonDef"):

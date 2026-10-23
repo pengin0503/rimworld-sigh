@@ -49,4 +49,9 @@
   <SimpleSigh_SettingHotkeyHint>Tip: assign "toggle sign text (Simple Sigh)" in Options &gt; Keyboard to show or hide all sign text with one key.</SimpleSigh_SettingHotkeyHint>
   <SimpleSigh_TextShown>Sign text shown.</SimpleSigh_TextShown>
   <SimpleSigh_TextHidden>Sign text hidden.</SimpleSigh_TextHidden>
+  <SimpleSigh_SignListTitle>Signs on this map ({0})</SimpleSigh_SignListTitle>
+  <SimpleSigh_Search>Search</SimpleSigh_Search>
+  <SimpleSigh_NoSigns>No matching signs.</SimpleSigh_NoSigns>
+  <SimpleSigh_NoTextShort>(no text)</SimpleSigh_NoTextShort>
+  <SimpleSigh_JumpToSign>Jump</SimpleSigh_JumpToSign>
 </LanguageData>

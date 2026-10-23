@@ -49,4 +49,9 @@
   <SimpleSigh_SettingHotkeyHint>ヒント：設定 &gt; キーボード で「看板の文字の表示切り替え（Simple Sigh）」にキーを割り当てると、1キーで全看板の文字を表示・非表示にできます。</SimpleSigh_SettingHotkeyHint>
   <SimpleSigh_TextShown>看板の文字を表示しました。</SimpleSigh_TextShown>
   <SimpleSigh_TextHidden>看板の文字を非表示にしました。</SimpleSigh_TextHidden>
+  <SimpleSigh_SignListTitle>このマップの看板（{0}）</SimpleSigh_SignListTitle>
+  <SimpleSigh_Search>検索</SimpleSigh_Search>
+  <SimpleSigh_NoSigns>該当する看板はありません。</SimpleSigh_NoSigns>
+  <SimpleSigh_NoTextShort>（文字なし）</SimpleSigh_NoTextShort>
+  <SimpleSigh_JumpToSign>移動</SimpleSigh_JumpToSign>
 </LanguageData>

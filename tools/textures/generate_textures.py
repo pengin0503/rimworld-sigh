@@ -181,7 +181,21 @@ def electronic_portrait(tex, mask):
     return led_board(tex, mask, 6, 8, 122, 226, 3, 12)
 
 
+def sign_list_icon():
+    """White silhouette for the minimized main-tab button, like vanilla's UI/Buttons/MainButtons icons."""
+    white, clear = (255, 255, 255, 255), CLEAR
+    icon = Canvas(64, 64)
+    icon.rect(8, 8, 56, 40, white)            # board
+    for y in (15, 23, 31):
+        icon.rect(14, y, 50 if y != 31 else 40, y + 3, clear)  # text lines cut out of the board
+    icon.rect(16, 40, 22, 58, white)           # posts
+    icon.rect(42, 40, 48, 58, white)
+    file = os.path.join(ROOT, "Textures", "UI", "Buttons", "MainButtons", "SimpleSigh_Signs.png")
+    icon.save(file)
+
+
 def main():
+    sign_list_icon()
     rects = {
         "SimpleSign": make("SimpleSign", 128, 128, basic_sign),
         "SimpleWallSign": make("SimpleWallSign", 128, 128, wall_sign),

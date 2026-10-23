@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <MainButtonDef>
+    <defName>SimpleSigh_Signs</defName>
+    <label>signs</label>
+    <description>List the signs on this map, search their text, jump to a sign or edit it.</description>
+    <tabWindowClass>SimpleSigh.Gui.MainTabWindow_Signs</tabWindowClass>
+    <order>85</order>
+    <minimized>true</minimized>
+    <iconPath>UI/Buttons/MainButtons/SimpleSigh_Signs</iconPath>
+  </MainButtonDef>
+
+</Defs>
