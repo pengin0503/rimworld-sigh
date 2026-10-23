@@ -85,6 +85,15 @@ public static class GlyphQuadBuilder
 
     public static List<GlyphQuad> Build(IReadOnlyList<string> lines, IGlyphSource source, float worldLineHeight)
     {
+        return Build(lines, source, worldLineHeight, SignHAlign.Center, 0f);
+    }
+
+    /// <summary>
+    /// Lines stacked top to bottom around Y = 0. Each line is centred on X = 0, or starts at
+    /// <c>-halfWidth</c> (left) / ends at <c>+halfWidth</c> (right).
+    /// </summary>
+    public static List<GlyphQuad> Build(IReadOnlyList<string> lines, IGlyphSource source, float worldLineHeight, SignHAlign align, float halfWidth)
+    {
         var quads = new List<GlyphQuad>();
         if (lines.Count == 0 || source.LineHeight <= 0f)
         {
@@ -97,7 +106,13 @@ public static class GlyphQuadBuilder
         {
             string line = lines[lineIndex];
             float lineTop = blockTop - lineIndex * worldLineHeight;
-            float penX = -MeasureLine(line, source) * k * 0.5f;
+            float lineWidth = MeasureLine(line, source) * k;
+            float penX = align switch
+            {
+                SignHAlign.Left => -halfWidth,
+                SignHAlign.Right => halfWidth - lineWidth,
+                _ => -lineWidth * 0.5f,
+            };
             TextElementEnumerator elements = StringInfo.GetTextElementEnumerator(line ?? string.Empty);
             while (elements.MoveNext())
             {

@@ -5,23 +5,27 @@ namespace SimpleSigh.Layout;
 /// <summary>Everything that changes a sign's visible text. Any difference forces exactly one rebuild.</summary>
 public readonly struct SignRenderKey : IEquatable<SignRenderKey>
 {
-    public SignRenderKey(string text, uint rgba, float scale, int rotation, int glyphGeneration, int glyphSourceId, int layoutHash, bool autoWrap)
+    public SignRenderKey(string text, uint rgba, int rotation, int glyphGeneration, int glyphSourceId, int layoutHash, SignTextStyle style)
     {
         Text = text ?? string.Empty;
         Rgba = rgba;
-        Scale = scale;
         Rotation = rotation;
         GlyphGeneration = glyphGeneration;
         GlyphSourceId = glyphSourceId;
         LayoutHash = layoutHash;
-        AutoWrap = autoWrap;
+        Style = style;
+    }
+
+    /// <summary>v0.1 form: size and automatic wrapping only, every other option at its default.</summary>
+    public SignRenderKey(string text, uint rgba, float scale, int rotation, int glyphGeneration, int glyphSourceId, int layoutHash, bool autoWrap)
+        : this(text, rgba, rotation, glyphGeneration, glyphSourceId, layoutHash,
+            new SignTextStyle(scale, autoWrap, SignHAlign.Center, SignVAlign.Middle, false, SignEffect.None))
+    {
     }
 
     public string Text { get; }
 
     public uint Rgba { get; }
-
-    public float Scale { get; }
 
     public int Rotation { get; }
 
@@ -34,17 +38,19 @@ public readonly struct SignRenderKey : IEquatable<SignRenderKey>
     /// <summary>Hash of panel geometry inputs (panel rects, padding, draw size, draw offset).</summary>
     public int LayoutHash { get; }
 
-    /// <summary>Per-sign automatic wrapping of single-line text.</summary>
-    public bool AutoWrap { get; }
+    public SignTextStyle Style { get; }
+
+    public float Scale => Style.Scale;
+
+    public bool AutoWrap => Style.AutoWrap;
 
     public bool Equals(SignRenderKey other)
     {
-        return Text == other.Text && Rgba == other.Rgba && Scale.Equals(other.Scale) && Rotation == other.Rotation
-            && GlyphGeneration == other.GlyphGeneration && GlyphSourceId == other.GlyphSourceId && LayoutHash == other.LayoutHash
-            && AutoWrap == other.AutoWrap;
+        return Text == other.Text && Rgba == other.Rgba && Rotation == other.Rotation && GlyphGeneration == other.GlyphGeneration
+            && GlyphSourceId == other.GlyphSourceId && LayoutHash == other.LayoutHash && Style.Equals(other.Style);
     }
 
     public override bool Equals(object obj) => obj is SignRenderKey other && Equals(other);
 
-    public override int GetHashCode() => HashCode.Combine(Text, Rgba, Scale, Rotation, GlyphGeneration, GlyphSourceId, LayoutHash, AutoWrap);
+    public override int GetHashCode() => HashCode.Combine(Text, Rgba, Rotation, GlyphGeneration, GlyphSourceId, LayoutHash, Style);
 }

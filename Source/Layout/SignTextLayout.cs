@@ -63,6 +63,18 @@ public static class SignTextLayout
     public static Result Build(string text, PanelPlacement panel, float padding, bool multiline, float userScale, IGlyphSource glyphs,
         bool autoWrap = true)
     {
+        return Build(text, panel, padding, multiline,
+            new SignTextStyle(userScale, autoWrap, SignHAlign.Center, SignVAlign.Middle, false, SignEffect.None), glyphs);
+    }
+
+    /// <summary>
+    /// Layout with every per-sign option. Alignment moves lines inside the padded panel; size, wrapping
+    /// and fitting are unaffected by it, so an aligned sign shows exactly the glyphs of a centred one.
+    /// </summary>
+    public static Result Build(string text, PanelPlacement panel, float padding, bool multiline, SignTextStyle style, IGlyphSource glyphs)
+    {
+        float userScale = style.Scale;
+        bool autoWrap = style.AutoWrap;
         if (string.IsNullOrEmpty(text) || glyphs.LineHeight <= 0f)
         {
             return Result.Empty;
@@ -104,9 +116,26 @@ public static class SignTextLayout
                 wrap, allowWordBreaks, balance);
         }
         float lineHeight = innerHeight * layout.Scale;
+        List<GlyphQuad> placed = GlyphQuadBuilder.Build(layout.Lines, glyphs, lineHeight, style.HAlign, innerWidth * 0.5f);
+        float slack = innerHeight * 0.5f - layout.Lines.Count * lineHeight * 0.5f;
+        float shift = style.VAlign switch
+        {
+            SignVAlign.Top => slack,
+            SignVAlign.Bottom => -slack,
+            _ => 0f,
+        };
+        if (shift != 0f)
+        {
+            for (int i = 0; i < placed.Count; i++)
+            {
+                GlyphQuad q = placed[i];
+                q.Y0 += shift;
+                q.Y1 += shift;
+                placed[i] = q;
+            }
+        }
         // The padding is the layout margin; ink beyond a glyph's line box may use it, but never leaves the panel.
-        List<GlyphQuad> quads = GlyphQuadBuilder.ClipTo(
-            GlyphQuadBuilder.Build(layout.Lines, glyphs, lineHeight), panel.Width * 0.5f, panel.Height * 0.5f);
+        List<GlyphQuad> quads = GlyphQuadBuilder.ClipTo(placed, panel.Width * 0.5f, panel.Height * 0.5f);
         return new Result(quads, panel.CenterX, panel.CenterZ, lineHeight, layout.Fits, layout.Lines);
     }
 }
