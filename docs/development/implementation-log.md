@@ -143,3 +143,14 @@ Not independent (subagents were not allowed). Findings:
 - Open, needs the game: everything in `docs/testing/v0.2-manual-checklist.md`. The riskiest items are the
   in-place mesh rewrite for scrolling (E2), depth sorting of the shadow pass (N5/N6) and floor-sign
   placement rules with `isEdifice=false` (N4).
+
+## Review fixes after v0.2 — 2026-10-24
+
+Checked against the RimWorld 1.7.9787.38423 assemblies with their engine dependencies and the 1.7 Core Data
+(structure cross-checks now run instead of being skipped; the smoke load passes).
+
+| ID | Decision | Why | Limit |
+| --- | --- | --- | --- |
+| D65 | Enter confirms a single-line editor only while `Input.compositionString` is empty (`SignEditRules.EnterConfirms`) | Issue #10: accepting a kana-kanji conversion with Enter must not close the editor. The 1.7 engine exposes the composition string, but nothing found in the game or host fills it, so the OS IME may handle conversion itself | needs the in-game IME rows I1–I4 |
+| D66 | The text toggle key is ignored while `GUIUtility.keyboardControl != 0` | Game components receive key events before windows (`UIRoot.UIRootOnGUI` runs `GameComponentOnGUI` before `WindowStackOnGUI`) and `KeyBindingDef.KeyDownEvent` only skips focused quick-search widgets, so a bound letter typed into the sign list search toggled the text and was swallowed | checklist row S6 |
+| D67 | Releases only from a `v*` tag whose version equals About.xml `modVersion` and whose committed DLL matches a Release build of the tag; the one-off `v0.1.0-test.1` job is removed | Issue #9: v0.2.0 was never published and nothing checked the tag against the version | publishing still needs a tag on main |

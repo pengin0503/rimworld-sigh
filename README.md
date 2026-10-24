@@ -87,6 +87,8 @@
 ### 方法A：GitHub Releases からZIPをダウンロード（推奨）
 
 1. **[Releases（配布ページ）](https://github.com/pengin0503/rimworld-sigh/releases)** を開きます。リリースがまだ存在しない場合は、方法Bで試用できます。
+   - **注意**：v0.2.0 のリリースが公開されるまで、Releases の最新は `v0.1.0-test.1` です。この版には日本語が「？」になる問題（#4）と文字が小さすぎる問題（#5）の修正、v0.2 の新機能が入っていません。v0.2 を試す場合は方法B（CIのZIP）を使ってください。
+   - リリースは `v0.2.0` のように About.xml の `modVersion` と一致するタグを main 上のコミットに付けると作成されます。タグと版が違う場合や、同梱DLLがソースと一致しない場合は公開しません。
 2. リリースの **Assets** から `SimpleSigh-vX.Y.Z.zip` をダウンロードします。GitHub が自動で表示する **Source code (zip)** はMOD用のZIPではありません。
 3. ZIPを**一度**展開します。中に `SimpleSigh` フォルダが1つあります。
 4. この `SimpleSigh` フォルダを、RimWorldインストール先の `Mods` フォルダにコピーします。
