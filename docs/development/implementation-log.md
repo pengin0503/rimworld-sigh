@@ -133,4 +133,13 @@ bundled-font change (PR #7); they had not checked whether that change fixed it. 
 
 ### Self-review (whole v0.2 branch, by the implementer)
 
-See the end of this section for findings; the review was not independent.
+Not independent (subagents were not allowed). Findings:
+
+- Important, fixed (T7): portrait panels clipped long text instead of shrinking it, also on the merged 2×1 board (D57).
+- Important, fixed (T11): the sign list could jump to or edit a sign that was deconstructed since its last refresh.
+- Minor, fixed (T11): two identical RGBA packing helpers merged into `Rendering.Rgba`.
+- Minor, accepted: the shadow may overhang the panel edge by up to 0.035 cells (D59).
+- Minor, accepted: a scrolling sign allocates two small arrays per frame inside the 1.7 Mesh stub (D63, `docs/testing/performance.md`).
+- Open, needs the game: everything in `docs/testing/v0.2-manual-checklist.md`. The riskiest items are the
+  in-place mesh rewrite for scrolling (E2), depth sorting of the shadow pass (N5/N6) and floor-sign
+  placement rules with `isEdifice=false` (N4).
