@@ -23,6 +23,10 @@
       <Beauty>0</Beauty>
     </statBases>
     <terrainAffordanceNeeded>Light</terrainAffordanceNeeded>
+    <building>
+      <!-- 1.7 paint: the CutoutComplex mask applies it to the frame only, so the panel stays legible. -->
+      <paintable>true</paintable>
+    </building>
   </ThingDef>
 
   <ThingDef ParentName="SimpleSigh_SignBase">

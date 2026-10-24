@@ -637,6 +637,14 @@ class SignCompTests(unittest.TestCase):
             expected = "false" if dark else None
             self.assertEqual(props.findtext("applyPlayerDefaultColor"), expected, sign.findtext("defName"))
 
+    def test_standing_and_wall_signs_are_paintable_floor_signs_are_not(self):
+        """1.7 paint (Designator_PaintBuilding) needs building.paintable; the CutoutComplex mask limits it to the frame."""
+        for sign in self.sign_defs():
+            expected = None if is_floor_sign(sign) else "true"
+            self.assertEqual(sign.findtext("building/paintable"), expected, sign.findtext("defName"))
+            if expected:
+                self.assertEqual(sign.findtext("graphicData/shaderType"), "CutoutComplex", sign.findtext("defName"))
+
     def test_comp_classes_exist_in_source(self):
         sources = "\n".join(source_text().values())
         for d in all_thing_defs():
