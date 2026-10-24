@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SimpleSigh.Rendering;
 using SimpleSigh.Text;
 using UnityEngine;
 using Verse;
@@ -43,21 +44,15 @@ public class SimpleSighSettings : ModSettings
     public void AddFavorite(Color color)
     {
         List<uint> packed = Pack(favoriteColors);
-        FavoriteColorList.Add(packed, ToRgba(color));
+        FavoriteColorList.Add(packed, Rgba.Pack(color));
         favoriteColors = Unpack(packed);
     }
 
     public void RemoveFavorite(Color color)
     {
         List<uint> packed = Pack(favoriteColors);
-        FavoriteColorList.Remove(packed, ToRgba(color));
+        FavoriteColorList.Remove(packed, Rgba.Pack(color));
         favoriteColors = Unpack(packed);
-    }
-
-    public static uint ToRgba(Color color)
-    {
-        Color32 c = color;
-        return ((uint)c.r << 24) | ((uint)c.g << 16) | ((uint)c.b << 8) | c.a;
     }
 
     private static List<uint> Pack(List<Color> colors)
@@ -65,7 +60,7 @@ public class SimpleSighSettings : ModSettings
         var packed = new List<uint>(colors.Count);
         foreach (Color color in colors)
         {
-            packed.Add(ToRgba(color));
+            packed.Add(Rgba.Pack(color));
         }
         return packed;
     }
@@ -75,7 +70,7 @@ public class SimpleSighSettings : ModSettings
         var colors = new List<Color>(packed.Count);
         foreach (uint rgba in packed)
         {
-            colors.Add(new Color32((byte)(rgba >> 24), (byte)(rgba >> 16), (byte)(rgba >> 8), (byte)rgba));
+            colors.Add(Rgba.Unpack(rgba));
         }
         return colors;
     }

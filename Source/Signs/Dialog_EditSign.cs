@@ -274,7 +274,7 @@ public class Dialog_EditSign : Window
         {
             Find.WindowStack.Add(new Dialog_SignColorPicker(color, Primary.Props.defaultColor, choices, picked => color = picked));
         }
-        bool isFavorite = settings.favoriteColors.Exists(c => SimpleSighSettings.ToRgba(c) == SimpleSighSettings.ToRgba(color));
+        bool isFavorite = settings.favoriteColors.Exists(c => Rendering.Rgba.Pack(c) == Rendering.Rgba.Pack(color));
         var favoriteRect = new Rect(inRect.x + width + 8f, y, width, RowHeight);
         if (!isFavorite && Widgets.ButtonText(favoriteRect, "SimpleSigh_AddFavorite".Translate()))
         {

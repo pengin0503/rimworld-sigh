@@ -25,10 +25,10 @@ BACKGROUND = (86, 104, 66, 255)
 # (case, cells across the square tile); tiles are laid out left to right without overlap.
 PX = 112
 SHOWCASE = [
-    ({"def": "SimpleSigh_BasicSign", "rotation": 0, "text": "研究室"}, 2.2),
-    ({"def": "SimpleSigh_WallSign", "rotation": 0, "text": "食料保管庫"}, 3.0),
-    ({"def": "SimpleSigh_NoticeBoard", "rotation": 0, "text": "本日の作業予定：\n畑の収穫と倉庫の整理"}, 2.4),
+    ({"def": "SimpleSigh_BasicSign", "rotation": 0, "text": "研究室"}, 2.0),
+    ({"def": "SimpleSigh_NoticeBoardLarge", "rotation": 0, "text": "本日の作業予定：\n畑の収穫と倉庫の整理"}, 3.4),
     ({"def": "SimpleSigh_ElectronicSign", "rotation": 0, "text": "発電所 稼働中\nPOWER 24h"}, 2.4),
+    ({"def": "SimpleSigh_FloorSign", "rotation": 0, "text": "出口", "shadow": True, "floor": (214, 206, 186)}, 1.8),
 ]
 
 
@@ -36,6 +36,7 @@ def compose_preview(results, atlas):
     preview = Image.new("RGBA", PREVIEW_SIZE, BACKGROUND)
     tiles = [rp.draw_case(case, result, atlas, PX, cells, None, show_panel=False) for (case, cells), result in zip(SHOWCASE, results)]
     gap = (PREVIEW_SIZE[0] - sum(t.width for t in tiles)) // (len(tiles) + 1)
+    assert gap >= 16, f"showcase tiles too wide (gap {gap})"
     x = gap
     for tile in tiles:
         preview.alpha_composite(tile, (x, 150 + (PREVIEW_SIZE[1] - 150 - 40 - tile.height) // 2))
@@ -45,7 +46,7 @@ def compose_preview(results, atlas):
     title = ImageFont.truetype(rp.FONT, 76)
     subtitle = ImageFont.truetype(rp.FONT, 34)
     draw.text((40, 18), "Simple Sigh", fill=(240, 236, 220), font=title)
-    draw.text((44, 100), "日本語も書けるバニラ風の看板・掲示板・電光掲示板", fill=(220, 214, 190), font=subtitle)
+    draw.text((44, 100), "日本語も書けるバニラ風の看板・掲示板・電光掲示板・床看板", fill=(220, 214, 190), font=subtitle)
     small = ImageFont.truetype(rp.FONT, 22)
     draw.text((40, PREVIEW_SIZE[1] - 34), "Offline render of the mod's own layout and textures (not an in-game screenshot)",
               fill=(210, 220, 200), font=small)

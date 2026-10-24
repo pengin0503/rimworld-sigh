@@ -8,9 +8,9 @@
   <supportedVersions>
     <li>1.7</li>
   </supportedVersions>
-  <description>Vanilla-style signs you can build from wood, stone or metal and write your own text on (Japanese, English letters, numbers and symbols). The text is drawn on the sign's display panel itself.
+  <description>Vanilla-style signs you can build from wood, stone or metal and write your own text on (Japanese, English letters, numbers and symbols). The text is drawn on the sign's display panel itself. Includes wall signs, notice boards (2x1 and 3x1), powered LED signs that can blink or scroll, and walkable floor signs. Edit several signs at once, align text, pick any colour, add a text shadow, paint the frames, and find signs in a searchable list.
 
-木材・石材・金属で建てられるバニラ風の看板です。日本語・英数字・記号を自由に入力でき、文字は看板の表示面に描画されます。
+木材・石材・金属で建てられるバニラ風の看板です。日本語・英数字・記号を自由に入力でき、文字は看板の表示面に描画されます。壁掛け看板、掲示板（2×1・3×1）、点滅やスクロールもできる電光掲示板、上を歩ける床看板を収録。複数の看板の一括編集、文字揃え、自由な色、文字の影、枠の塗装、検索できる看板一覧に対応しています。
 
 Sign font: BIZ UDPGothic (Copyright 2022 The BIZ UDGothic Project Authors), SIL Open Font License 1.1, see Fonts/BIZUDPGothic-OFL.txt.</description>
 </ModMetaData>

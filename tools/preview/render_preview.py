@@ -56,6 +56,19 @@ CASES = [
     {"def": "SimpleSigh_ElectronicSign", "rotation": 0, "text": "発電所 稼働中\nPOWER 24h"},
     {"def": "SimpleSigh_ElectronicSign", "rotation": 1, "text": "発電所 稼働中\nPOWER 24h"},
     {"def": "SimpleSigh_ElectronicSign", "rotation": 0, "text": "停電中は消灯（文字は保持）", "color": (90, 230, 120)},
+    {"def": "SimpleSigh_NoticeBoard", "rotation": 0, "text": "左上揃え\nLeft / Top", "hAlign": "Left", "vAlign": "Top", "scale": 0.6},
+    {"def": "SimpleSigh_NoticeBoard", "rotation": 0, "text": "右下揃え＋影\nRight / Bottom", "hAlign": "Right", "vAlign": "Bottom",
+     "scale": 0.6, "shadow": True},
+    {"def": "SimpleSigh_NoticeBoardLarge", "rotation": 0, "text": NOTICE + "\n明日は休息日です。"},
+    {"def": "SimpleSigh_NoticeBoardLarge", "rotation": 1, "text": NOTICE},
+    {"def": "SimpleSigh_ElectronicSignLarge", "rotation": 0, "text": "ようこそ！ 本日の夕食はシチューです", "effect": "Scroll", "time": 2.0},
+    {"def": "SimpleSigh_ElectronicSignLarge", "rotation": 0, "text": "ようこそ！ 本日の夕食はシチューです", "effect": "Scroll", "time": 5.0},
+    {"def": "SimpleSigh_ElectronicSignLarge", "rotation": 1, "text": "非常口\nEXIT", "color": (90, 230, 120)},
+    {"def": "SimpleSigh_FloorSign", "rotation": 0, "text": "出口", "shadow": True},
+    {"def": "SimpleSigh_FloorSign", "rotation": 0, "text": "出口", "shadow": True, "floor": (214, 206, 186)},
+    {"def": "SimpleSigh_FloorSignLong", "rotation": 0, "text": "→ 食堂・寝室", "shadow": True, "floor": (214, 206, 186)},
+    {"def": "SimpleSigh_FloorSignLong", "rotation": 1, "text": "↑ 倉庫", "shadow": True},
+    {"def": "SimpleSigh_FloorSignLong", "rotation": 0, "text": "影なし（明るい床）", "floor": (214, 206, 186)},
 ]
 ZOOM_LABELS = ["研究室", "立入禁止", "食料保管庫", "研究施設入口", "第二研究施設の入口", "Food Storage"]
 # Map cell size in screen pixels: 1080 / (2 * camera root size). Root size 24 is CameraDriver.StartingSize
@@ -68,7 +81,19 @@ GRAPHICS = {
     "SimpleSigh_NoticeBoard": {"tex": "SimpleNoticeBoard", "multi": True, "size": (2, 1), "footprint": (2, 1), "offsets": None},
     "SimpleSigh_ElectronicSign": {"tex": "SimpleElectronicSign", "multi": True, "size": (2, 1), "footprint": (2, 1), "offsets": None,
                                   "metal": True, "text": (255, 171, 61)},
+    "SimpleSigh_NoticeBoardLarge": {"tex": "SimpleNoticeBoard3", "multi": True, "size": (3, 1), "footprint": (3, 1), "offsets": None},
+    "SimpleSigh_ElectronicSignLarge": {"tex": "SimpleElectronicSign3", "multi": True, "size": (3, 1), "footprint": (3, 1), "offsets": None,
+                                       "metal": True, "text": (255, 171, 61)},
+    # Floor markings: untinted Cutout art (no mask), white text on whatever floor lies below.
+    "SimpleSigh_FloorSign": {"tex": "SimpleFloorSign", "multi": False, "size": (1, 1), "footprint": (1, 1), "offsets": None,
+                             "plain": True, "text": (255, 255, 255), "floor": (92, 84, 74)},
+    "SimpleSigh_FloorSignLong": {"tex": "SimpleFloorSign3", "multi": True, "size": (3, 1), "footprint": (3, 1), "offsets": None,
+                                 "plain": True, "text": (255, 255, 255), "floor": (92, 84, 74)},
 }
+
+
+def text_color(case):
+    return tuple(case.get("color") or GRAPHICS[case["def"]].get("text") or TEXT)
 
 
 def tinted(name, mask_name, color):
@@ -101,13 +126,16 @@ def sample_bilinear(atlas_top_down, u, v):
     return (top * (1 - fy) + bottom * fy) / 255.0
 
 
-def draw_text(tile, quads, to_px, atlas, color):
-    """Rasterizes each glyph quad by sampling the atlas at destination pixel centres, as a GPU would."""
+def draw_text(tile, quads, to_px, atlas, color, offset=0.0, opacity=1.0):
+    """Rasterizes each glyph quad by sampling the atlas at destination pixel centres, as a GPU would.
+
+    offset moves the quads right and down (south) by that many cells, as the in-game shadow pass does.
+    """
     pixels = np.asarray(tile, dtype=np.float32).copy()
     ink = np.array(color, dtype=np.float32)
     for q in quads:
-        left, top = to_px(q["x0"], q["z1"])
-        right, bottom = to_px(q["x1"], q["z0"])
+        left, top = to_px(q["x0"] + offset, q["z1"] - offset)
+        right, bottom = to_px(q["x1"] + offset, q["z0"] - offset)
         xs = np.arange(int(np.floor(left)), int(np.ceil(right)))
         ys = np.arange(int(np.floor(top)), int(np.ceil(bottom)))
         xs = xs[(xs >= 0) & (xs < pixels.shape[1])]
@@ -127,7 +155,7 @@ def draw_text(tile, quads, to_px, atlas, color):
         u = q["u0"] + (q["u1"] - q["u0"]) * tu
         v = q["vTop"] + (q["vBottom"] - q["vTop"]) * tv
         uu, vv = np.meshgrid(u, v)
-        alpha = sample_bilinear(atlas, uu, vv)[..., None]
+        alpha = sample_bilinear(atlas, uu, vv)[..., None] * opacity
         region = pixels[ys[0]:ys[-1] + 1, xs[0]:xs[-1] + 1, :3]
         pixels[ys[0]:ys[-1] + 1, xs[0]:xs[-1] + 1, :3] = region * (1 - alpha) + ink * alpha
     return Image.fromarray(pixels.clip(0, 255).astype(np.uint8), "RGBA")
@@ -137,11 +165,13 @@ def draw_case(case, result, atlas, px, cells, label_font, show_panel=True):
     g = GRAPHICS[case["def"]]
     rot = case["rotation"]
     size_px = int(round(cells * px))
-    tile = Image.new("RGBA", (size_px, size_px), (86, 104, 66, 255))
+    ground = tuple(case.get("floor") or g.get("floor") or (86, 104, 66))
+    tile = Image.new("RGBA", (size_px, size_px), ground + (255,))
     draw = ImageDraw.Draw(tile)
+    grid = tuple(max(0, c - 10) for c in ground)
     for i in range(int(cells) + 1):
-        draw.line([(i * px, 0), (i * px, size_px)], fill=(76, 92, 58))
-        draw.line([(0, i * px), (size_px, i * px)], fill=(76, 92, 58))
+        draw.line([(i * px, 0), (i * px, size_px)], fill=grid)
+        draw.line([(0, i * px), (size_px, i * px)], fill=grid)
     cx, cy = size_px / 2, size_px / 2   # thing TrueCenter
 
     def to_px(x, z):
@@ -153,7 +183,13 @@ def draw_case(case, result, atlas, px, cells, label_font, show_panel=True):
         draw.rectangle([wx, wy, wx + px - 1, wy + px - 1], fill=(120, 116, 110), outline=(60, 58, 55))
 
     color = STEEL if rot % 2 or g.get("metal") else WOOD
-    if g["multi"]:
+    if g.get("plain"):
+        name = g["tex"] + (("_east" if rot in (1, 3) else "_north") if g["multi"] else "")
+        sprite = Image.open(os.path.join(TEX, name + ".png")).convert("RGBA")
+        if g["multi"] and rot == 3:
+            sprite = sprite.transpose(Image.FLIP_LEFT_RIGHT)
+        size = g["size"] if not g["multi"] or rot in (0, 2) else g["size"][::-1]
+    elif g["multi"]:
         name = g["tex"] + ("_east" if rot in (1, 3) else "_north")
         sprite = tinted(name, name + "m", color)
         if rot == 3:
@@ -174,11 +210,15 @@ def draw_case(case, result, atlas, px, cells, label_font, show_panel=True):
         px1, py1 = to_px(p["x"] + p["w"] / 2, p["z"] - p["h"] / 2)
         draw.rectangle([px0, py0, px1, py1], outline=(220, 40, 40))
 
-    text_color = case.get("color") or g.get("text") or TEXT
-    tile = draw_text(tile, result["quads"], to_px, atlas, text_color)
+    shadow = result.get("shadow")
+    if shadow:
+        tile = draw_text(tile, result["quads"], to_px, atlas, shadow["rgb"], shadow["offset"], shadow["alpha"])
+    tile = draw_text(tile, result["quads"], to_px, atlas, text_color(case))
     if label_font is not None:
         wrap = "" if case.get("autoWrap", True) else " wrap=off"
-        label = f'{case["def"].replace("SimpleSigh_", "")} rot={"NESW"[rot]} size={int(case.get("scale", 1) * 100)}%{wrap}'
+        extras = "".join(f" {k}={case[k]}" for k in ("hAlign", "vAlign", "effect", "time") if k in case)
+        extras += " shadow" if case.get("shadow") else ""
+        label = f'{case["def"].replace("SimpleSigh_", "")} rot={"NESW"[rot]} size={int(case.get("scale", 1) * 100)}%{wrap}{extras}'
         ImageDraw.Draw(tile).text((6, 6), label, fill=(255, 255, 255), font=label_font)
     return tile
 
@@ -189,7 +229,8 @@ def run_layout(cases):
         result_path = os.path.join(tmp, "result.json")
         atlas_path = os.path.join(tmp, "atlas.bin")
         with open(cases_path, "w", encoding="utf-8") as h:
-            json.dump(cases, h, ensure_ascii=False)
+            # The layout tool needs the drawn text colour to choose the shadow colour.
+            json.dump([dict(c, color=list(text_color(c))) for c in cases], h, ensure_ascii=False)
         subprocess.run(["dotnet", "run", "--project", os.path.join(ROOT, "tools", "preview"), "--",
                         ROOT, FONT, cases_path, result_path, atlas_path], check=True)
         with open(result_path, encoding="utf-8") as h:

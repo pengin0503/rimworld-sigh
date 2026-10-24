@@ -52,6 +52,11 @@ public class MainTabWindow_Signs : MainTabWindow
         shown.Clear();
         foreach (CompSignText sign in signs)
         {
+            // A sign deconstructed or minified since the last refresh must not be jumped to or edited.
+            if (!sign.parent.Spawned)
+            {
+                continue;
+            }
             if (SignSearch.Matches(sign.Text, query) || SignSearch.Matches(sign.parent.LabelCap, query))
             {
                 shown.Add(sign);

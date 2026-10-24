@@ -79,7 +79,7 @@ public sealed class SignRenderCache
         CompProperties_SignText props = sign.Props;
         int layoutHash = System.HashCode.Combine(props.panelRect, props.panelRectHorizontal, props.panelPadding,
             graphic?.drawSize ?? Vector2.zero, graphic?.DrawOffset(rot) ?? Vector3.zero);
-        uint rgba = SignTextRenderer.ToRgba(sign.TextColor);
+        uint rgba = Rgba.Pack(sign.TextColor);
         return new SignRenderKey(sign.Text, rgba, rot.AsInt, glyphs.Generation, glyphs.SourceId, layoutHash, sign.Style);
     }
 

@@ -84,7 +84,7 @@ public static class SignTextRenderer
         material = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, sign.TextColor) { renderQueue = renderQueue });
         if (sign.Style.Shadow)
         {
-            Color shadowColor = FromRgba(SignShadow.ColorFor(ToRgba(sign.TextColor)));
+            Color shadowColor = Rgba.Unpack(SignShadow.ColorFor(Rgba.Pack(sign.TextColor)));
             shadowMaterial = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, shadowColor) { renderQueue = renderQueue });
             float offset = SignShadow.Offset(lineHeight);
             shadowOffset = new Vector3(offset, 0f, -offset);
@@ -106,15 +106,6 @@ public static class SignTextRenderer
         position.y += Altitudes.AltInc * 0.5f;
         Graphics.DrawMesh(mesh, Matrix4x4.TRS(position, Quaternion.identity, Vector3.one), material, 0);
     }
-
-    public static uint ToRgba(Color color)
-    {
-        Color32 c = color;
-        return ((uint)c.r << 24) | ((uint)c.g << 16) | ((uint)c.b << 8) | c.a;
-    }
-
-    public static Color FromRgba(uint rgba) =>
-        new Color32((byte)(rgba >> 24), (byte)(rgba >> 16), (byte)(rgba >> 8), (byte)rgba);
 
     private static Mesh ToMesh(List<GlyphQuad> quads)
     {

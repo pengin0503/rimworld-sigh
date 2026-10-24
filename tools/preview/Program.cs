@@ -38,6 +38,16 @@ public static class Program
             string text = c.GetProperty("text").GetString();
             float userScale = c.TryGetProperty("scale", out JsonElement s) ? s.GetSingle() : 1f;
             bool autoWrap = !c.TryGetProperty("autoWrap", out JsonElement w) || w.GetBoolean();
+            var style = new SignTextStyle(userScale, autoWrap,
+                Enum.Parse<SignHAlign>(Str(c, "hAlign", "Center")), Enum.Parse<SignVAlign>(Str(c, "vAlign", "Middle")),
+                c.TryGetProperty("shadow", out JsonElement sh) && sh.GetBoolean(), Enum.Parse<SignEffect>(Str(c, "effect", "None")));
+            // Text colour as 0-255 RGB, only used to pick the shadow colour.
+            uint rgba = 0x222222FF;
+            if (c.TryGetProperty("color", out JsonElement col))
+            {
+                int[] rgb = col.EnumerateArray().Select(v => v.GetInt32()).ToArray();
+                rgba = ((uint)rgb[0] << 24) | ((uint)rgb[1] << 16) | ((uint)rgb[2] << 8) | 0xFF;
+            }
             XElement def = defs[defName];
             XElement graphic = Field(def, defs, "graphicData");
             XElement comp = Field(def, defs, "comps").Elements("li").First(li => (string)li.Attribute("Class") == "SimpleSigh.Signs.CompProperties_SignText");
@@ -55,7 +65,20 @@ public static class Program
             bool rotatedSize = multi || !drawRotated;
             bool mirror = multi && rotation == 3;
             PanelPlacement panel = SignPanelGeometry.Place(north, horizontal, drawSize[0], drawSize[1], rotation, offset[0], offset[2], rotatedSize, mirror);
-            SignTextLayout.Result layout = SignTextLayout.Build(text, panel, padding, multiline, userScale, atlas, autoWrap);
+            SignTextLayout.Result layout = SignTextLayout.Build(text, panel, padding, multiline, style, atlas);
+            List<GlyphQuad> quads = layout.Quads;
+            float lineHeight = layout.LineHeight;
+            if (style.Effect == SignEffect.Scroll)
+            {
+                // One frame of the marquee at the given time in seconds.
+                Marquee.Layout row = Marquee.Build(text, panel, padding, style, atlas);
+                float time = c.TryGetProperty("time", out JsonElement t) ? t.GetSingle() : 0f;
+                quads = new List<GlyphQuad>();
+                Marquee.Clip(row.Quads, Marquee.Offset(time, Marquee.SpeedFor(row.LineHeight), row.TextWidth, row.PanelWidth),
+                    row.HalfWidth, row.HalfHeight, quads);
+                lineHeight = row.LineHeight;
+            }
+            uint shadowRgba = SignShadow.ColorFor(rgba);
             output.Add(new
             {
                 def = defName,
@@ -64,9 +87,12 @@ public static class Program
                 panel = new { x = panel.CenterX, z = panel.CenterZ, w = panel.Width, h = panel.Height },
                 fits = layout.Fits,
                 lines = layout.LineCount,
-                lineHeight = layout.LineHeight,
+                lineHeight,
+                shadow = style.Shadow
+                    ? new { offset = SignShadow.Offset(lineHeight), rgb = new[] { (int)(shadowRgba >> 24), (int)((shadowRgba >> 16) & 0xFF), (int)((shadowRgba >> 8) & 0xFF) }, alpha = (shadowRgba & 0xFF) / 255f }
+                    : null,
                 missing = GlyphQuadBuilder.HasMissingGlyphs(text, atlas),
-                quads = layout.Quads.Select(q => new
+                quads = quads.Select(q => new
                 {
                     x0 = q.X0 + layout.CenterX, x1 = q.X1 + layout.CenterX, z0 = q.Y0 + layout.CenterZ, z1 = q.Y1 + layout.CenterZ,
                     u0 = q.U0, u1 = q.U1, vTop = q.VTop, vBottom = q.VBottom,
@@ -77,6 +103,9 @@ public static class Program
         File.WriteAllBytes(args[4], atlas.Alpha);
         return 0;
     }
+
+    private static string Str(JsonElement c, string name, string fallback) =>
+        c.TryGetProperty(name, out JsonElement v) ? v.GetString() : fallback;
 
     private static Dictionary<string, XElement> LoadDefs(string repo)
     {
