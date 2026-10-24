@@ -44,8 +44,8 @@ public sealed class SignRenderCache
         {
             MissingGlyphs = GlyphQuadBuilder.HasMissingGlyphs(sign.Text, glyphs);
             return SignTextRenderer.TryBuild(sign, glyphs, out Mesh mesh, out Material material, out Vector3 center,
-                    out Material shadowMaterial, out Vector3 shadowOffset)
-                ? new BuiltText(mesh, material, center, shadowMaterial, shadowOffset)
+                    out Material shadowMaterial, out Vector3 shadowOffset, out ScrollingText scrolling)
+                ? new BuiltText(mesh, material, center, shadowMaterial, shadowOffset, scrolling)
                 : null;
         });
         if (slot.HasValue)
@@ -85,8 +85,10 @@ public sealed class SignRenderCache
 
     public sealed class BuiltText
     {
-        public BuiltText(Mesh mesh, Material material, Vector3 localCenter, Material shadowMaterial, Vector3 shadowOffset)
+        public BuiltText(Mesh mesh, Material material, Vector3 localCenter, Material shadowMaterial, Vector3 shadowOffset,
+            ScrollingText scrolling)
         {
+            Scrolling = scrolling;
             Mesh = mesh;
             Material = material;
             LocalCenter = localCenter;
@@ -104,5 +106,8 @@ public sealed class SignRenderCache
         public Material ShadowMaterial { get; }
 
         public Vector3 ShadowOffset { get; }
+
+        /// <summary>Non-null for scrolling signs: owns <see cref="Mesh"/> and moves the text each frame.</summary>
+        public ScrollingText Scrolling { get; }
     }
 }

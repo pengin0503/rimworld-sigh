@@ -35,6 +35,10 @@
   <SimpleSigh_Preview>プレビュー</SimpleSigh_Preview>
   <SimpleSigh_Shadow>文字の影</SimpleSigh_Shadow>
   <SimpleSigh_ShadowDesc>文字の後ろに黒または白（目立つ方）の影を付け、どんな背景でも読みやすくします。</SimpleSigh_ShadowDesc>
+  <SimpleSigh_Effect>表示効果:</SimpleSigh_Effect>
+  <SimpleSigh_EffectNone>なし</SimpleSigh_EffectNone>
+  <SimpleSigh_EffectBlink>点滅</SimpleSigh_EffectBlink>
+  <SimpleSigh_EffectScroll>スクロール</SimpleSigh_EffectScroll>
   <SimpleSigh_SettingShowText>看板の文字を表示する</SimpleSigh_SettingShowText>
   <SimpleSigh_SettingShowTextDesc>すべての看板の文字の表示・非表示を切り替えます。設定 &gt; キーボード でキーを割り当てられます。</SimpleSigh_SettingShowTextDesc>
   <SimpleSigh_SettingHideFromZoom>ズームアウト時に看板の文字を隠す：</SimpleSigh_SettingHideFromZoom>

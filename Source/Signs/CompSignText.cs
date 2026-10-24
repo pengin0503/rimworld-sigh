@@ -193,9 +193,15 @@ public class CompSignText : ThingComp
         {
             return;
         }
+        if (effect == SignEffect.Blink && !SignVisibility.BlinkOn(Time.realtimeSinceStartup))
+        {
+            return;
+        }
         SignRenderCache.BuiltText built = renderCache.Get(this, glyphs);
         if (built != null)
         {
+            // Real time: LED effects keep their pace whatever the game speed, also while paused.
+            built.Scrolling?.Update(Time.realtimeSinceStartup);
             SignTextRenderer.Draw(parent, built.Mesh, built.Material, built.LocalCenter, built.ShadowMaterial, built.ShadowOffset);
         }
     }

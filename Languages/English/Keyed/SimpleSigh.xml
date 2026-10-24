@@ -35,6 +35,10 @@
   <SimpleSigh_Preview>Preview</SimpleSigh_Preview>
   <SimpleSigh_Shadow>Text shadow</SimpleSigh_Shadow>
   <SimpleSigh_ShadowDesc>Draws a soft black or white shadow behind the text, whichever stands out more, so the text reads on any background.</SimpleSigh_ShadowDesc>
+  <SimpleSigh_Effect>Effect:</SimpleSigh_Effect>
+  <SimpleSigh_EffectNone>Static</SimpleSigh_EffectNone>
+  <SimpleSigh_EffectBlink>Blink</SimpleSigh_EffectBlink>
+  <SimpleSigh_EffectScroll>Scroll</SimpleSigh_EffectScroll>
   <SimpleSigh_SettingShowText>Show sign text</SimpleSigh_SettingShowText>
   <SimpleSigh_SettingShowTextDesc>Turns the text of every sign on or off. A key for this can be assigned in Options &gt; Keyboard.</SimpleSigh_SettingShowTextDesc>
   <SimpleSigh_SettingHideFromZoom>Hide sign text when zoomed out:</SimpleSigh_SettingHideFromZoom>

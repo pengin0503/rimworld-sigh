@@ -49,6 +49,7 @@ public class Dialog_EditSign : Window
     private SignVAlign vAlign;
     private bool shadow;
     private SignEffect effect;
+    private readonly bool effectsAllowed;
     private bool focused;
     private Vector2 textScroll;
 
@@ -66,6 +67,8 @@ public class Dialog_EditSign : Window
             rules.Add(new SignEditRules(sign.Props.maxElements, sign.Props.multiline));
         }
         SignEditRules combined = SignEditRules.Combine(rules);
+        // Effects are offered only when every selected sign can show them (comps drop them otherwise).
+        effectsAllowed = signs.TrueForAll(s => s.Props.allowEffects);
         CompSignText primary = signs[0];
         session = new SignEditSession(primary.Text, combined.MaxElements, combined.Multiline);
         color = primary.TextColor;
@@ -162,6 +165,17 @@ public class Dialog_EditSign : Window
         Rect left = new Rect(rect.x, rect.y, rect.width / 2f - 8f, rect.height);
         Widgets.CheckboxLabeled(left, "SimpleSigh_Shadow".Translate(), ref shadow);
         TooltipHandler.TipRegion(left, "SimpleSigh_ShadowDesc".Translate());
+        if (effectsAllowed)
+        {
+            const float labelWidth = 70f;
+            float x = rect.x + rect.width / 2f;
+            Widgets.Label(new Rect(x, rect.y, labelWidth, rect.height), "SimpleSigh_Effect".Translate());
+            x += labelWidth;
+            float buttonWidth = (rect.xMax - x) / 3f;
+            x = AlignButton(ref effect, SignEffect.None, "SimpleSigh_EffectNone", x, rect, buttonWidth);
+            x = AlignButton(ref effect, SignEffect.Blink, "SimpleSigh_EffectBlink", x, rect, buttonWidth);
+            AlignButton(ref effect, SignEffect.Scroll, "SimpleSigh_EffectScroll", x, rect, buttonWidth);
+        }
         return rect.yMax;
     }
 
@@ -307,7 +321,10 @@ public class Dialog_EditSign : Window
         SignTextStyle style = CurrentStyle;
         foreach (CompSignText sign in signs)
         {
-            sign.Apply(normalized, color, style);
+            // Without the effect selector, each sign keeps its own effect.
+            SignTextStyle own = effectsAllowed ? style
+                : new SignTextStyle(style.Scale, style.AutoWrap, style.HAlign, style.VAlign, style.Shadow, sign.Style.Effect);
+            sign.Apply(normalized, color, own);
         }
         Close();
     }

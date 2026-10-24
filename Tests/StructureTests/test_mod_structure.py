@@ -267,7 +267,7 @@ class ElectronicSignTests(unittest.TestCase):
 
     def test_text_is_power_gated_led(self):
         props = self.comp(SignCompTests.PROPS)
-        for field in ("requiresPower", "glowsInDark", "syncGlowColor", "multiline"):
+        for field in ("requiresPower", "glowsInDark", "syncGlowColor", "multiline", "allowEffects"):
             self.assertEqual(props.findtext(field), "true", field)
         self.assertEqual(props.findtext("maxElements"), "256")
         self.assertTrue(props.findtext("defaultColor"))
@@ -628,6 +628,13 @@ class SignCompTests(unittest.TestCase):
             light, dark = sorted((luminance(panel), luminance(values[:3])), reverse=True)
             ratio = (light + 0.05) / (dark + 0.05)
             self.assertGreaterEqual(ratio, 4.5, f"{sign.findtext('defName')}: contrast {ratio:.2f}")
+
+    def test_effects_only_on_led_signs(self):
+        """Blink/scroll are LED features; painted boards and floor markings stay static."""
+        for sign in self.sign_defs():
+            props = comp_props(sign, self.PROPS)
+            led = props.findtext("glowsInDark") == "true"
+            self.assertEqual(props.findtext("allowEffects"), "true" if led else None, sign.findtext("defName"))
 
     def test_player_default_colour_skips_dark_backgrounds(self):
         """Dark text chosen for wooden boards must not become the default on LED screens or floor markings."""

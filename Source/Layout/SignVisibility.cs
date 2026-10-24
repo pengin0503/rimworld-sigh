@@ -37,5 +37,12 @@ public static class SignVisibility
     /// </summary>
     public static bool ZoomAllows(int currentZoom, int hideFrom) => hideFrom < 0 || currentZoom < hideFrom;
 
+    /// <summary>Blinking LED text: on for 0.6 s, off for 0.4 s, every second.</summary>
+    public static bool BlinkOn(float timeSeconds)
+    {
+        double phase = timeSeconds - System.Math.Floor(timeSeconds);
+        return phase < 0.6;
+    }
+
     public static int RenderQueueFor(bool glowsInDark) => glowsInDark ? PostLightQueue : LitQueue;
 }

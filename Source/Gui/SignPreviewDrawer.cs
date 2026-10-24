@@ -18,6 +18,8 @@ public sealed class SignPreviewDrawer
     private int builtGeneration = int.MinValue;
     private PanelPlacement builtPanel;
     private SignTextLayout.Result layout;
+    private Marquee.Layout marquee;
+    private readonly System.Collections.Generic.List<GlyphQuad> scrolled = new System.Collections.Generic.List<GlyphQuad>();
 
     public void Draw(Rect rect, CompSignText sign, string text, Color color, SignTextStyle style)
     {
@@ -46,6 +48,7 @@ public sealed class SignPreviewDrawer
         {
             glyphs.Prepare(text);
             layout = SignTextLayout.Build(text, centred, props.panelPadding, props.multiline, style, glyphs);
+            marquee = style.Effect == SignEffect.Scroll ? Marquee.Build(text, centred, props.panelPadding, style, glyphs) : null;
             builtText = text;
             builtStyle = style;
             builtGeneration = glyphs.Generation;
@@ -57,21 +60,37 @@ public sealed class SignPreviewDrawer
         {
             return;
         }
+        // The preview shows the LED effects as the map will, on the same real-time clock.
+        float now = Time.realtimeSinceStartup;
+        if (style.Effect == SignEffect.Blink && !SignVisibility.BlinkOn(now))
+        {
+            return;
+        }
+        System.Collections.Generic.List<GlyphQuad> quads = layout.Quads;
+        float lineHeight = layout.LineHeight;
+        if (marquee != null)
+        {
+            float offset = Marquee.Offset(now, Marquee.SpeedFor(marquee.LineHeight), marquee.TextWidth, marquee.PanelWidth);
+            Marquee.Clip(marquee.Quads, offset, marquee.HalfWidth, marquee.HalfHeight, scrolled);
+            quads = scrolled;
+            lineHeight = marquee.LineHeight;
+        }
         Color previous = GUI.color;
         if (style.Shadow)
         {
             GUI.color = SignTextRenderer.FromRgba(SignShadow.ColorFor(SignTextRenderer.ToRgba(color)));
-            DrawQuads(panelRect, pixelsPerCell, atlas, SignShadow.Offset(layout.LineHeight));
+            DrawQuads(quads, panelRect, pixelsPerCell, atlas, SignShadow.Offset(lineHeight));
         }
         GUI.color = color;
-        DrawQuads(panelRect, pixelsPerCell, atlas, 0f);
+        DrawQuads(quads, panelRect, pixelsPerCell, atlas, 0f);
         GUI.color = previous;
     }
 
-    private void DrawQuads(Rect panelRect, float pixelsPerCell, Texture2D atlas, float offset)
+    private static void DrawQuads(System.Collections.Generic.List<GlyphQuad> quads, Rect panelRect, float pixelsPerCell, Texture2D atlas,
+        float offset)
     {
         Vector2 center = panelRect.center;
-        foreach (GlyphQuad q in layout.Quads)
+        foreach (GlyphQuad q in quads)
         {
             // Text Y points up (world north); GUI Y points down.
             var screen = new Rect(center.x + (q.X0 + offset) * pixelsPerCell, center.y - (q.Y1 - offset) * pixelsPerCell,
