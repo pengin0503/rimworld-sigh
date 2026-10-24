@@ -42,4 +42,15 @@ public class SignEditRulesTests
     {
         Assert.Throws<System.ArgumentException>(() => SignEditRules.Combine(new List<SignEditRules>()));
     }
+
+    [Theory]
+    [InlineData(false, "", true)]
+    [InlineData(false, null, true)]
+    [InlineData(false, "けんきゅう", false)]
+    [InlineData(true, "", false)]
+    [InlineData(true, "けんきゅう", false)]
+    public void EnterConfirmsOnlySingleLineEditorsOutsideImeComposition(bool multiline, string composition, bool expected)
+    {
+        Assert.Equal(expected, SignEditRules.EnterConfirms(multiline, composition));
+    }
 }

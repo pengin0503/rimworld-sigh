@@ -95,8 +95,8 @@ public class Dialog_EditSign : Window
     public override void DoWindowContents(Rect inRect)
     {
         bool submit = false;
-        if (!session.Multiline && Event.current.type == EventType.KeyDown
-            && (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter))
+        if (Event.current.type == EventType.KeyDown && (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter)
+            && SignEditRules.EnterConfirms(session.Multiline, Input.compositionString))
         {
             submit = true;
             Event.current.Use();
