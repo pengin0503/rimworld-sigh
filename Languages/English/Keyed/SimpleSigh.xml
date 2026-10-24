@@ -17,4 +17,47 @@
   <SimpleSigh_MissingGlyphs>Some characters are not in the sign font and are shown as "?". The saved text is unchanged.</SimpleSigh_MissingGlyphs>
   <SimpleSigh_AutoWrap>Wrap long text automatically to make it larger</SimpleSigh_AutoWrap>
   <SimpleSigh_LongTextHint>Long text is small on a 1×1 sign. A 2×1 notice board (multi-line) is easier to read.</SimpleSigh_LongTextHint>
+  <SimpleSigh_EditTitleMany>Edit {0} signs</SimpleSigh_EditTitleMany>
+  <SimpleSigh_PasteClipboard>Replace with clipboard text</SimpleSigh_PasteClipboard>
+  <SimpleSigh_CopyClipboard>Copy text to clipboard</SimpleSigh_CopyClipboard>
+  <SimpleSigh_CopiedToClipboard>Sign text copied to the clipboard.</SimpleSigh_CopiedToClipboard>
+  <SimpleSigh_ClipboardEmpty>The clipboard has no text.</SimpleSigh_ClipboardEmpty>
+  <SimpleSigh_Alignment>Alignment</SimpleSigh_Alignment>
+  <SimpleSigh_AlignLeft>Left</SimpleSigh_AlignLeft>
+  <SimpleSigh_AlignCenter>Centre</SimpleSigh_AlignCenter>
+  <SimpleSigh_AlignRight>Right</SimpleSigh_AlignRight>
+  <SimpleSigh_AlignTop>Top</SimpleSigh_AlignTop>
+  <SimpleSigh_AlignMiddle>Middle</SimpleSigh_AlignMiddle>
+  <SimpleSigh_AlignBottom>Bottom</SimpleSigh_AlignBottom>
+  <SimpleSigh_MoreColors>More colours...</SimpleSigh_MoreColors>
+  <SimpleSigh_AddFavorite>Save colour as favourite</SimpleSigh_AddFavorite>
+  <SimpleSigh_RemoveFavorite>Remove from favourites</SimpleSigh_RemoveFavorite>
+  <SimpleSigh_Preview>Preview</SimpleSigh_Preview>
+  <SimpleSigh_Shadow>Text shadow</SimpleSigh_Shadow>
+  <SimpleSigh_ShadowDesc>Draws a soft black or white shadow behind the text, whichever stands out more, so the text reads on any background.</SimpleSigh_ShadowDesc>
+  <SimpleSigh_Effect>Effect:</SimpleSigh_Effect>
+  <SimpleSigh_EffectNone>Static</SimpleSigh_EffectNone>
+  <SimpleSigh_EffectBlink>Blink</SimpleSigh_EffectBlink>
+  <SimpleSigh_EffectScroll>Scroll</SimpleSigh_EffectScroll>
+  <SimpleSigh_SettingShowText>Show sign text</SimpleSigh_SettingShowText>
+  <SimpleSigh_SettingShowTextDesc>Turns the text of every sign on or off. A key for this can be assigned in Options &gt; Keyboard.</SimpleSigh_SettingShowTextDesc>
+  <SimpleSigh_SettingHideFromZoom>Hide sign text when zoomed out:</SimpleSigh_SettingHideFromZoom>
+  <SimpleSigh_ZoomNever>Never</SimpleSigh_ZoomNever>
+  <SimpleSigh_ZoomMiddle>From medium zoom</SimpleSigh_ZoomMiddle>
+  <SimpleSigh_ZoomFar>From far zoom</SimpleSigh_ZoomFar>
+  <SimpleSigh_ZoomFurthest>Only at the furthest zoom</SimpleSigh_ZoomFurthest>
+  <SimpleSigh_SettingDefaultAutoWrap>New single-line signs wrap text automatically</SimpleSigh_SettingDefaultAutoWrap>
+  <SimpleSigh_SettingUseDefaultColor>Use my own text colour for new signs</SimpleSigh_SettingUseDefaultColor>
+  <SimpleSigh_SettingUseDefaultColorDesc>Applies to newly built signs only (not electronic signs, which keep their LED colour). Existing signs are not changed.</SimpleSigh_SettingUseDefaultColorDesc>
+  <SimpleSigh_ChooseDefaultColor>Choose colour...</SimpleSigh_ChooseDefaultColor>
+  <SimpleSigh_SettingFavorites>Favourite colours ({0} / {1}):</SimpleSigh_SettingFavorites>
+  <SimpleSigh_ClickToRemoveFavorite>Click to remove from favourites</SimpleSigh_ClickToRemoveFavorite>
+  <SimpleSigh_SettingHotkeyHint>Tip: assign "toggle sign text (Simple Sigh)" in Options &gt; Keyboard to show or hide all sign text with one key.</SimpleSigh_SettingHotkeyHint>
+  <SimpleSigh_TextShown>Sign text shown.</SimpleSigh_TextShown>
+  <SimpleSigh_TextHidden>Sign text hidden.</SimpleSigh_TextHidden>
+  <SimpleSigh_SignListTitle>Signs on this map ({0})</SimpleSigh_SignListTitle>
+  <SimpleSigh_Search>Search</SimpleSigh_Search>
+  <SimpleSigh_NoSigns>No matching signs.</SimpleSigh_NoSigns>
+  <SimpleSigh_NoTextShort>(no text)</SimpleSigh_NoTextShort>
+  <SimpleSigh_JumpToSign>Jump</SimpleSigh_JumpToSign>
 </LanguageData>

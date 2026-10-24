@@ -87,3 +87,59 @@ executable. Every in-game check is `NOT RUN` (`docs/testing/japanese-and-legibil
 
 Font provenance: `https://raw.githubusercontent.com/google/fonts/main/ofl/bizudpgothic/BIZUDPGothic-Bold.ttf`
 (sha256 `30eba52fc837e8b62c97d4b82e6706583149fb7294e3712dd71a655eaea80a90`) and `OFL.txt` from the same folder.
+
+## v0.2 features — 2026-10-23/24
+
+Plan: `docs/superpowers/plans/2026-10-23-simple-sigh-v0.2-features.md`. Requested by the user: Japanese `???`
+check, Workshop/RimSort preparation, and every proposed feature except wall-sign side art. Subagents were not
+allowed, so this section's review is a self-review. Every in-game check is `NOT RUN`
+(`docs/testing/v0.2-manual-checklist.md`).
+
+### Japanese `???` report
+
+The user saw `???` with the game language Japanese (not with English), on a build from before or around the
+bundled-font change (PR #7); they had not checked whether that change fixed it. Findings:
+
+- Since PR #7 sign text no longer uses the game's TextMeshPro atlas; it uses the mod's own atlas made from the
+  bundled BIZ UDPGothic Bold, so the game language no longer decides which characters exist.
+- `BundledFontCoverageTests` pins coverage: all 6355 JIS X 0208 kanji (level 1: 2965, level 2: 3390), rows 1–8,
+  ASCII and half-width katakana, with a negative control (U+E000).
+- All 2414 distinct characters of the game's own Japanese localisation (3 235 840 occurrences) are in the font
+  (one-off local check, not committed: the localisation is not redistributable).
+- Remaining risk: the in-game texture upload (Waylith `SetPixels32`/`Apply`) and the font file being found at
+  runtime. Both are logged once on failure (`[Simple Sigh]` in `Player.log`). Rows J1–J4 of the checklist.
+
+### Decisions
+
+| # | Decision | Evidence / reason | Cost if wrong |
+| --- | --- | --- | --- |
+| D48 | RimSort "Missing Properties": no `PublishedFileId.txt` is invented; README explains Ignore and a real upload; the packager accepts the file when RimWorld creates it | RimSort checks Package ID and Publish Field ID only; the latter comes from `About/PublishedFileId.txt`, written by RimWorld on upload. A fake ID would point at someone else's Workshop item | warning stays until ignored/uploaded |
+| D49 | `About/Preview.png` (1280×720) and `ModIcon.png` rendered offline from the mod's own textures and layout, labelled as such; `modVersion` 0.2.0 | 1.7 `ModMetaData` reads all three | — |
+| D50 | One `SignTextStyle` value (scale, auto wrap, alignment, shadow, effect) flows through comp, clipboard, editor, render key and layout; v0.1 overloads forward to it | Old saves and callers unchanged; the new save keys are omitted at their defaults (smoke-tested) | — |
+| D51 | Multi-select edit uses the strictest rules of all selected signs (smallest limit; multi-line only if all are) | The stored text must be valid for every target | short limit when mixing kinds |
+| D52 | Free colour: subclass of vanilla `Dialog_ColorPickerBase`; favourites (max 12) in mod settings | Vanilla UI, no custom widget | — |
+| D53 | OS clipboard via `GUIUtility.systemCopyBuffer`; pasted text replaces the draft and invalid text is reported, never cut | 1.7 stub forwards to GLFW | — |
+| D54 | Settings: show text, hide from zoom level (`CameraZoomRange` 2/3/4), default auto wrap, default colour, favourites; hotkey `KeyBindingDef` unbound, category Game, ignored while a window absorbs input | Avoids key conflicts and toggling while typing | player must bind the key |
+| D55 | Sign list: minimized `MainButtonDef` tab; NFKC + lower case + katakana→hiragana search; refresh every 60 frames | — | — |
+| D56 | 3×1 notice board (384 chars) and LED sign (384 chars, 3 components, 60 W) | Spec "2×1, later 3×1" | — |
+| D57 | Fit has an absolute minimum row height (0.015 cell) besides 5 % of the panel height | Portrait panels (signs turned E/W, including the merged 2×1 board) clipped long text instead of shrinking it | very long notices become tiny instead of clipped |
+| D58 | Floor signs: corner marks with a see-through inside (Cutout), FloorEmplacement, Standable, not edifices, no cost, WorkToBuild 200, shadow on, white text | Vanilla spot pattern (CaravanPackingSpot). A translucent plate needs the Transparent shader, whose section-mesh depth sort can cover the text | legibility relies on the shadow |
+| D59 | Shadow: same mesh drawn first, offset by 7 % of the row height (0.004–0.035 cells), black or white by WCAG contrast with the text | A fixed black shadow is invisible behind dark text | shadow may overhang the panel edge by ≤ 0.035 cells |
+| D60 | `applyPlayerDefaultColor` (false on LED and floor signs) replaces the `requiresPower` check | Building differences live in comp properties | — |
+| D61 | Paint: `building/paintable` on the standing/wall sign base; the CutoutComplex mask confines it to the frame; floor signs not paintable | 1.7 `Designator_PaintBuilding` requires `paintable` | — |
+| D62 | LED effects (LED signs only): blink 0.6 s on / 0.4 s off; scroll as one row at the user size, entering at the right screen edge and leaving fully on the left, three row heights per second; real time | Game time would stop or triple the motion with game speed | keeps moving while paused |
+| D63 | Scrolling mesh: fixed triangle list, vertices/UVs rewritten each frame into preallocated arrays, unused glyphs collapsed to a point | Clipping is allocation-free (tested); the 1.7 Mesh stub clones arrays on assignment and rebuilds its engine storage on draw (read from its IL; a `Mesh` cannot be created without the Vulkan assemblies) | about 1 KB per visible scrolling sign per frame |
+| D64 | Multi-edit without the effect selector keeps each sign's own effect | Hidden options must not be copied | — |
+
+### Self-review (whole v0.2 branch, by the implementer)
+
+Not independent (subagents were not allowed). Findings:
+
+- Important, fixed (T7): portrait panels clipped long text instead of shrinking it, also on the merged 2×1 board (D57).
+- Important, fixed (T11): the sign list could jump to or edit a sign that was deconstructed since its last refresh.
+- Minor, fixed (T11): two identical RGBA packing helpers merged into `Rendering.Rgba`.
+- Minor, accepted: the shadow may overhang the panel edge by up to 0.035 cells (D59).
+- Minor, accepted: a scrolling sign allocates two small arrays per frame inside the 1.7 Mesh stub (D63, `docs/testing/performance.md`).
+- Open, needs the game: everything in `docs/testing/v0.2-manual-checklist.md`. The riskiest items are the
+  in-place mesh rewrite for scrolling (E2), depth sorting of the shadow pass (N5/N6) and floor-sign
+  placement rules with `isEdifice=false` (N4).

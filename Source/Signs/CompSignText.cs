@@ -21,11 +21,19 @@ public class CompSignText : ThingComp
     private const string ColorKey = "simpleSighColor";
     private const string ScaleKey = "simpleSighScale";
     private const string AutoWrapKey = "simpleSighAutoWrap";
+    private const string HAlignKey = "simpleSighHAlign";
+    private const string VAlignKey = "simpleSighVAlign";
+    private const string ShadowKey = "simpleSighShadow";
+    private const string EffectKey = "simpleSighEffect";
 
     private string text = string.Empty;
     private Color color;
     private float scale = MaxScale;
     private bool autoWrap = true;
+    private SignHAlign hAlign = SignHAlign.Center;
+    private SignVAlign vAlign = SignVAlign.Middle;
+    private bool shadow;
+    private SignEffect effect = SignEffect.None;
 
     private readonly SignRenderCache renderCache = new SignRenderCache();
     private CompPowerTrader powerComp;
@@ -46,26 +54,52 @@ public class CompSignText : ThingComp
     /// </summary>
     public bool AutoWrap => autoWrap;
 
+    /// <summary>All display options of this sign.</summary>
+    public SignTextStyle Style => new SignTextStyle(scale, autoWrap, hAlign, vAlign, shadow, effect);
+
     public override void Initialize(CompProperties props)
     {
         base.Initialize(props);
         color = Props.defaultColor;
+        shadow = Props.defaultShadow;
+    }
+
+    /// <summary>Newly built signs start from the player's defaults (signs from saves keep their own values).</summary>
+    public override void PostPostMake()
+    {
+        base.PostPostMake();
+        SimpleSighSettings settings = SimpleSighMod.Settings;
+        if (settings.useCustomDefaultColor && Props.applyPlayerDefaultColor)
+        {
+            color = settings.customDefaultColor;
+        }
+        autoWrap = settings.defaultAutoWrap;
+    }
+
+    /// <summary>Stores already-validated values, keeping the alignment, shadow and effect.</summary>
+    public void Apply(string newText, Color newColor, float newScale, bool newAutoWrap)
+    {
+        Apply(newText, newColor, new SignTextStyle(newScale, newAutoWrap, hAlign, vAlign, shadow, effect));
     }
 
     /// <summary>Stores already-validated values. Callers must validate text through <see cref="SignEditSession"/>.</summary>
-    public void Apply(string newText, Color newColor, float newScale, bool newAutoWrap)
+    public void Apply(string newText, Color newColor, SignTextStyle newStyle)
     {
         newText ??= string.Empty;
-        newScale = Mathf.Clamp(newScale, MinScale, MaxScale);
-        if (newText == text && newColor == color && Mathf.Approximately(newScale, scale) && newAutoWrap == autoWrap)
+        newStyle = Sanitize(newStyle);
+        if (newText == text && newColor == color && newStyle == Style)
         {
             return;
         }
         bool colorChanged = newColor != color;
         text = newText;
         color = newColor;
-        scale = newScale;
-        autoWrap = newAutoWrap;
+        scale = newStyle.Scale;
+        autoWrap = newStyle.AutoWrap;
+        hAlign = newStyle.HAlign;
+        vAlign = newStyle.VAlign;
+        shadow = newStyle.Shadow;
+        effect = newStyle.Effect;
         if (text.Length == 0)
         {
             // An empty sign is never drawn, so the draw path would not replace the old mesh: free it now.
@@ -92,12 +126,19 @@ public class CompSignText : ThingComp
         Scribe_Values.Look(ref color, ColorKey, Props.defaultColor);
         Scribe_Values.Look(ref scale, ScaleKey, MaxScale);
         Scribe_Values.Look(ref autoWrap, AutoWrapKey, true);
+        // Added in v0.2; signs saved earlier load with the v0.1 look (centred, no shadow, static).
+        Scribe_Values.Look(ref hAlign, HAlignKey, SignHAlign.Center);
+        Scribe_Values.Look(ref vAlign, VAlignKey, SignVAlign.Middle);
+        Scribe_Values.Look(ref shadow, ShadowKey, false);
+        Scribe_Values.Look(ref effect, EffectKey, SignEffect.None);
         if (Scribe.mode == LoadSaveMode.LoadingVars)
         {
             // Saved text is never truncated, even if a later version lowers the limit;
             // the renderer shrinks it to fit instead.
             text = SignTextCodec.Decode(stored);
-            scale = Mathf.Clamp(scale, MinScale, MaxScale);
+            SignTextStyle loaded = Sanitize(Style);
+            scale = loaded.Scale;
+            effect = loaded.Effect;
         }
     }
 
@@ -112,18 +153,21 @@ public class CompSignText : ThingComp
             yield break;
         }
 
+        // With several signs selected, only the clicked gizmo runs: one editor for all selected signs, one copy.
         yield return new Command_Action
         {
             defaultLabel = "SimpleSigh_EditText".Translate(),
             defaultDesc = "SimpleSigh_EditTextDesc".Translate(),
             icon = TexButton.Rename,
-            action = () => Find.WindowStack.Add(new Dialog_EditSign(this)),
+            alsoClickIfOtherInGroupClicked = false,
+            action = () => Find.WindowStack.Add(new Dialog_EditSign(SelectedPlayerSigns())),
         };
         yield return new Command_Action
         {
             defaultLabel = "SimpleSigh_CopyText".Translate(),
             defaultDesc = "SimpleSigh_CopyTextDesc".Translate(),
             icon = TexButton.Copy,
+            alsoClickIfOtherInGroupClicked = false,
             action = () => SignClipboard.Copy(this),
         };
         if (SignClipboard.HasContent)
@@ -142,15 +186,23 @@ public class CompSignText : ThingComp
     {
         base.PostDraw();
         Map map = parent.Map;
-        if (!SignVisibility.ShouldDrawText(text, Props.requiresPower, powerComp != null, powerComp != null && powerComp.PowerOn)
+        SimpleSighSettings settings = SimpleSighMod.Settings;
+        if (!settings.showText || !SignVisibility.ZoomAllows((int)Find.CameraDriver.CurrentZoom, settings.hideTextFromZoom)
+            || !SignVisibility.ShouldDrawText(text, Props.requiresPower, powerComp != null, powerComp != null && powerComp.PowerOn)
             || map == null || parent.Position.Fogged(map) || !SignGlyphSources.TryGetCurrent(out ISignGlyphs glyphs))
+        {
+            return;
+        }
+        if (effect == SignEffect.Blink && !SignVisibility.BlinkOn(Time.realtimeSinceStartup))
         {
             return;
         }
         SignRenderCache.BuiltText built = renderCache.Get(this, glyphs);
         if (built != null)
         {
-            SignTextRenderer.Draw(parent, built.Mesh, built.Material, built.LocalCenter);
+            // Real time: LED effects keep their pace whatever the game speed, also while paused.
+            built.Scrolling?.Update(Time.realtimeSinceStartup);
+            SignTextRenderer.Draw(parent, built.Mesh, built.Material, built.LocalCenter, built.ShadowMaterial, built.ShadowOffset);
         }
     }
 
@@ -170,6 +222,28 @@ public class CompSignText : ThingComp
     {
         base.Notify_MapRemoved();
         renderCache.Release();
+    }
+
+    /// <summary>This sign first, then every other selected player sign.</summary>
+    private List<CompSignText> SelectedPlayerSigns()
+    {
+        var signs = new List<CompSignText> { this };
+        foreach (object selected in Find.Selector.SelectedObjects)
+        {
+            if (selected is ThingWithComps thing && thing.Faction == Faction.OfPlayer
+                && thing.GetComp<CompSignText>() is CompSignText other && other != this)
+            {
+                signs.Add(other);
+            }
+        }
+        return signs;
+    }
+
+    private SignTextStyle Sanitize(SignTextStyle style)
+    {
+        float clamped = Mathf.Clamp(style.Scale, MinScale, MaxScale);
+        SignEffect allowed = Props.allowEffects ? style.Effect : SignEffect.None;
+        return new SignTextStyle(clamped, style.AutoWrap, style.HAlign, style.VAlign, style.Shadow, allowed);
     }
 
     /// <summary>The glower saves its own colour override, so this only runs when the text colour changes.</summary>

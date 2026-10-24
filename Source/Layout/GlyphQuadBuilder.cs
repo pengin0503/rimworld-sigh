@@ -85,6 +85,15 @@ public static class GlyphQuadBuilder
 
     public static List<GlyphQuad> Build(IReadOnlyList<string> lines, IGlyphSource source, float worldLineHeight)
     {
+        return Build(lines, source, worldLineHeight, SignHAlign.Center, 0f);
+    }
+
+    /// <summary>
+    /// Lines stacked top to bottom around Y = 0. Each line is centred on X = 0, or starts at
+    /// <c>-halfWidth</c> (left) / ends at <c>+halfWidth</c> (right).
+    /// </summary>
+    public static List<GlyphQuad> Build(IReadOnlyList<string> lines, IGlyphSource source, float worldLineHeight, SignHAlign align, float halfWidth)
+    {
         var quads = new List<GlyphQuad>();
         if (lines.Count == 0 || source.LineHeight <= 0f)
         {
@@ -97,7 +106,13 @@ public static class GlyphQuadBuilder
         {
             string line = lines[lineIndex];
             float lineTop = blockTop - lineIndex * worldLineHeight;
-            float penX = -MeasureLine(line, source) * k * 0.5f;
+            float lineWidth = MeasureLine(line, source) * k;
+            float penX = align switch
+            {
+                SignHAlign.Left => -halfWidth,
+                SignHAlign.Right => halfWidth - lineWidth,
+                _ => -lineWidth * 0.5f,
+            };
             TextElementEnumerator elements = StringInfo.GetTextElementEnumerator(line ?? string.Empty);
             while (elements.MoveNext())
             {
@@ -136,31 +151,47 @@ public static class GlyphQuadBuilder
         var kept = new List<GlyphQuad>(quads.Count);
         foreach (GlyphQuad quad in quads)
         {
-            float x0 = Math.Max(quad.X0, -halfWidth);
-            float x1 = Math.Min(quad.X1, halfWidth);
-            float y0 = Math.Max(quad.Y0, -halfHeight);
-            float y1 = Math.Min(quad.Y1, halfHeight);
-            if (x1 - x0 <= 1e-6f || y1 - y0 <= 1e-6f)
+            if (TryClip(quad, 0f, halfWidth, halfHeight, out GlyphQuad clipped))
             {
-                continue;
+                kept.Add(clipped);
             }
-            float width = quad.X1 - quad.X0;
-            float height = quad.Y1 - quad.Y0;
-            float du = quad.U1 - quad.U0;
-            float dv = quad.VTop - quad.VBottom;
-            kept.Add(new GlyphQuad
-            {
-                X0 = x0,
-                X1 = x1,
-                Y0 = y0,
-                Y1 = y1,
-                U0 = quad.U0 + du * (x0 - quad.X0) / width,
-                U1 = quad.U0 + du * (x1 - quad.X0) / width,
-                VBottom = quad.VBottom + dv * (y0 - quad.Y0) / height,
-                VTop = quad.VBottom + dv * (y1 - quad.Y0) / height,
-            });
         }
         return kept;
+    }
+
+    /// <summary>
+    /// Moves a quad by <paramref name="shiftX"/>, then clips it to a centred box, cutting its texture
+    /// coordinates in proportion. False when nothing of it is inside the box.
+    /// </summary>
+    public static bool TryClip(GlyphQuad quad, float shiftX, float halfWidth, float halfHeight, out GlyphQuad clipped)
+    {
+        float qx0 = quad.X0 + shiftX;
+        float qx1 = quad.X1 + shiftX;
+        float x0 = Math.Max(qx0, -halfWidth);
+        float x1 = Math.Min(qx1, halfWidth);
+        float y0 = Math.Max(quad.Y0, -halfHeight);
+        float y1 = Math.Min(quad.Y1, halfHeight);
+        if (x1 - x0 <= 1e-6f || y1 - y0 <= 1e-6f)
+        {
+            clipped = default;
+            return false;
+        }
+        float width = qx1 - qx0;
+        float height = quad.Y1 - quad.Y0;
+        float du = quad.U1 - quad.U0;
+        float dv = quad.VTop - quad.VBottom;
+        clipped = new GlyphQuad
+        {
+            X0 = x0,
+            X1 = x1,
+            Y0 = y0,
+            Y1 = y1,
+            U0 = quad.U0 + du * (x0 - qx0) / width,
+            U1 = quad.U0 + du * (x1 - qx0) / width,
+            VBottom = quad.VBottom + dv * (y0 - quad.Y0) / height,
+            VTop = quad.VBottom + dv * (y1 - quad.Y0) / height,
+        };
+        return true;
     }
 
     private static bool TryResolve(string element, IGlyphSource source, out GlyphMetrics glyph)

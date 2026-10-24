@@ -7,5 +7,13 @@
   <SimpleSigh_NoticeBoard.label>掲示板</SimpleSigh_NoticeBoard.label>
   <SimpleSigh_NoticeBoard.description>長めのお知らせを書ける大型の立て掲示板。複数行に対応し、長い行は折り返され、掲示板に収まるよう縮小されます。選択して「文字を編集」から書き込めます。</SimpleSigh_NoticeBoard.description>
   <SimpleSigh_ElectronicSign.label>電光掲示板</SimpleSigh_ElectronicSign.label>
-  <SimpleSigh_ElectronicSign.description>複数行のメッセージを表示できる電力式のLED掲示板。電力がある間は選んだ色で文字が光り、停電中は消灯します。メッセージは保持され、復電すると再び表示されます。選択して「文字を編集」から書き込めます。</SimpleSigh_ElectronicSign.description>
+  <SimpleSigh_ElectronicSign.description>複数行のメッセージを表示できる電力式のLED掲示板。電力がある間は選んだ色で文字が光り、停電中は消灯します。メッセージは保持され、復電すると再び表示されます。点滅やスクロール表示もできます。選択して「文字を編集」から書き込めます。</SimpleSigh_ElectronicSign.description>
+  <SimpleSigh_NoticeBoardLarge.label>大型掲示板</SimpleSigh_NoticeBoardLarge.label>
+  <SimpleSigh_NoticeBoardLarge.description>長いお知らせを書ける横長の立て掲示板。複数行に対応し、長い行は折り返され、掲示板に収まるよう縮小されます。選択して「文字を編集」から書き込めます。</SimpleSigh_NoticeBoardLarge.description>
+  <SimpleSigh_ElectronicSignLarge.label>大型電光掲示板</SimpleSigh_ElectronicSignLarge.label>
+  <SimpleSigh_ElectronicSignLarge.description>長いメッセージを表示できる横長の電力式LED掲示板。電力がある間は選んだ色で文字が光り、停電中は消灯します。メッセージは保持され、復電すると再び表示されます。点滅やスクロール表示もできます。選択して「文字を編集」から書き込めます。</SimpleSigh_ElectronicSignLarge.description>
+  <SimpleSigh_FloorSign.label>床看板</SimpleSigh_FloorSign.label>
+  <SimpleSigh_FloorSign.description>床に直接描く短いメッセージ。材料は不要で、上を歩けて、家具の設置も妨げません。選択して「文字を編集」から書き込めます。</SimpleSigh_FloorSign.description>
+  <SimpleSigh_FloorSignLong.label>長い床看板</SimpleSigh_FloorSignLong.label>
+  <SimpleSigh_FloorSignLong.description>床に直接描く長めのメッセージ。廊下の道案内などに。複数行に対応します。材料は不要で、上を歩けて、家具の設置も妨げません。選択して「文字を編集」から書き込めます。</SimpleSigh_FloorSignLong.description>
 </LanguageData>

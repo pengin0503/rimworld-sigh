@@ -30,12 +30,19 @@ public static class SignTextRenderer
             drawSize.x, drawSize.y, rot.AsInt, offset.x, offset.z, rotatedSize, mirrored);
     }
 
-    /// <summary>Creates the mesh, or returns false when there is nothing to draw.</summary>
-    public static bool TryBuild(CompSignText sign, ISignGlyphs glyphs, out Mesh mesh, out Material material, out Vector3 localCenter)
+    /// <summary>
+    /// Creates the mesh, or returns false when there is nothing to draw. With the shadow option the same
+    /// mesh is drawn a second time with <paramref name="shadowMaterial"/>, offset by <paramref name="shadowOffset"/>.
+    /// </summary>
+    public static bool TryBuild(CompSignText sign, ISignGlyphs glyphs, out Mesh mesh, out Material material, out Vector3 localCenter,
+        out Material shadowMaterial, out Vector3 shadowOffset, out ScrollingText scrolling)
     {
+        scrolling = null;
         mesh = null;
         material = null;
         localCenter = Vector3.zero;
+        shadowMaterial = null;
+        shadowOffset = Vector3.zero;
         if (sign.Text.NullOrEmpty())
         {
             return false;
@@ -43,27 +50,59 @@ public static class SignTextRenderer
 
         PanelPlacement panel = PanelFor(sign, sign.parent.Rotation);
         CompProperties_SignText props = sign.Props;
-        SignTextLayout.Result layout = SignTextLayout.Build(sign.Text, panel, props.panelPadding, props.multiline, sign.Scale, glyphs, sign.AutoWrap);
-        if (layout.Quads.Count == 0)
-        {
-            return false;
-        }
-
         Texture2D atlas = glyphs.Atlas;
         if (atlas == null)
         {
             return false;
         }
+        float lineHeight;
+        if (sign.Style.Effect == SignEffect.Scroll)
+        {
+            Marquee.Layout row = Marquee.Build(sign.Text, panel, props.panelPadding, sign.Style, glyphs);
+            if (row.Quads.Count == 0)
+            {
+                return false;
+            }
+            scrolling = new ScrollingText(row);
+            mesh = scrolling.Mesh;
+            lineHeight = row.LineHeight;
+            localCenter = new Vector3(row.CenterX, 0f, row.CenterZ);
+        }
+        else
+        {
+            SignTextLayout.Result layout = SignTextLayout.Build(sign.Text, panel, props.panelPadding, props.multiline, sign.Style, glyphs);
+            if (layout.Quads.Count == 0)
+            {
+                return false;
+            }
+            mesh = ToMesh(layout.Quads);
+            lineHeight = layout.LineHeight;
+            localCenter = new Vector3(layout.CenterX, 0f, layout.CenterZ);
+        }
 
-        mesh = ToMesh(layout.Quads);
-        material = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, sign.TextColor) { renderQueue = SignVisibility.RenderQueueFor(props.glowsInDark) });
-        localCenter = new Vector3(layout.CenterX, 0f, layout.CenterZ);
+        int renderQueue = SignVisibility.RenderQueueFor(props.glowsInDark);
+        material = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, sign.TextColor) { renderQueue = renderQueue });
+        if (sign.Style.Shadow)
+        {
+            Color shadowColor = Rgba.Unpack(SignShadow.ColorFor(Rgba.Pack(sign.TextColor)));
+            shadowMaterial = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, shadowColor) { renderQueue = renderQueue });
+            float offset = SignShadow.Offset(lineHeight);
+            shadowOffset = new Vector3(offset, 0f, -offset);
+        }
         return true;
     }
 
-    public static void Draw(Thing thing, Mesh mesh, Material material, Vector3 localCenter)
+    public static void Draw(Thing thing, Mesh mesh, Material material, Vector3 localCenter, Material shadowMaterial = null,
+        Vector3 shadowOffset = default)
     {
         Vector3 position = thing.DrawPos + localCenter;
+        if (shadowMaterial != null)
+        {
+            // Same render queue as the text; the lower altitude sorts the shadow behind it.
+            Vector3 shadowPosition = position + shadowOffset;
+            shadowPosition.y += Altitudes.AltInc * 0.25f;
+            Graphics.DrawMesh(mesh, Matrix4x4.TRS(shadowPosition, Quaternion.identity, Vector3.one), shadowMaterial, 0);
+        }
         position.y += Altitudes.AltInc * 0.5f;
         Graphics.DrawMesh(mesh, Matrix4x4.TRS(position, Quaternion.identity, Vector3.one), material, 0);
     }
@@ -72,7 +111,16 @@ public static class SignTextRenderer
     {
         var vertices = new Vector3[quads.Count * 4];
         var uvs = new Vector2[quads.Count * 4];
-        var triangles = new int[quads.Count * 6];
+        WriteQuads(quads, vertices, uvs);
+        return CreateMesh(vertices, uvs, quads.Count, markNoLongerReadable: false);
+    }
+
+    /// <summary>
+    /// Writes quads into the start of the arrays; the remaining quads collapse to a point so a mesh
+    /// with a fixed triangle list can show fewer glyphs.
+    /// </summary>
+    internal static void WriteQuads(List<GlyphQuad> quads, Vector3[] vertices, Vector2[] uvs)
+    {
         for (int i = 0; i < quads.Count; i++)
         {
             GlyphQuad q = quads[i];
@@ -86,6 +134,20 @@ public static class SignTextRenderer
             uvs[v + 1] = new Vector2(q.U0, q.VTop);
             uvs[v + 2] = new Vector2(q.U1, q.VTop);
             uvs[v + 3] = new Vector2(q.U1, q.VBottom);
+        }
+        for (int v = quads.Count * 4; v < vertices.Length; v++)
+        {
+            vertices[v] = Vector3.zero;
+            uvs[v] = Vector2.zero;
+        }
+    }
+
+    internal static Mesh CreateMesh(Vector3[] vertices, Vector2[] uvs, int quadCount, bool markNoLongerReadable)
+    {
+        var triangles = new int[quadCount * 6];
+        for (int i = 0; i < quadCount; i++)
+        {
+            int v = i * 4;
             int t = i * 6;
             triangles[t] = v;
             triangles[t + 1] = v + 1;
@@ -99,7 +161,7 @@ public static class SignTextRenderer
         mesh.uv = uvs;
         mesh.triangles = triangles;
         mesh.RecalculateBounds();
-        mesh.UploadMeshData(markNoLongerReadable: false);
+        mesh.UploadMeshData(markNoLongerReadable);
         return mesh;
     }
 

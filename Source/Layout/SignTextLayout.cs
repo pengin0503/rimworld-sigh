@@ -14,6 +14,13 @@ public static class SignTextLayout
     public const float MinFitScale = 0.05f;
 
     /// <summary>
+    /// Smallest row height in map cells. Tall (portrait) panels may shrink rows below
+    /// <see cref="MinFitScale"/> of their height down to this, so a sign turned east or west holds the
+    /// same text as when it faces north instead of clipping it.
+    /// </summary>
+    public const float MinLineHeightCells = 0.015f;
+
+    /// <summary>
     /// Automatic wrapping is used only when it makes the text at least this much larger than one row;
     /// for a marginal gain a single row reads more naturally.
     /// </summary>
@@ -63,6 +70,18 @@ public static class SignTextLayout
     public static Result Build(string text, PanelPlacement panel, float padding, bool multiline, float userScale, IGlyphSource glyphs,
         bool autoWrap = true)
     {
+        return Build(text, panel, padding, multiline,
+            new SignTextStyle(userScale, autoWrap, SignHAlign.Center, SignVAlign.Middle, false, SignEffect.None), glyphs);
+    }
+
+    /// <summary>
+    /// Layout with every per-sign option. Alignment moves lines inside the padded panel; size, wrapping
+    /// and fitting are unaffected by it, so an aligned sign shows exactly the glyphs of a centred one.
+    /// </summary>
+    public static Result Build(string text, PanelPlacement panel, float padding, bool multiline, SignTextStyle style, IGlyphSource glyphs)
+    {
+        float userScale = style.Scale;
+        bool autoWrap = style.AutoWrap;
         if (string.IsNullOrEmpty(text) || glyphs.LineHeight <= 0f)
         {
             return Result.Empty;
@@ -79,13 +98,14 @@ public static class SignTextLayout
         // At scale 1 one line fills the panel height.
         float pixelsToWorld = innerHeight / glyphs.LineHeight;
         Func<string, float> measure = s => GlyphQuadBuilder.MeasureLine(s, glyphs) * pixelsToWorld;
+        float minScale = Math.Min(MinFitScale, MinLineHeightCells / innerHeight);
         bool wrap = multiline;
         bool allowWordBreaks = true;
         bool balance = false;
-        SignLayoutResult layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, MinFitScale, wrap: multiline);
+        SignLayoutResult layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, minScale, wrap: multiline);
         if (!multiline && autoWrap)
         {
-            SignLayoutResult wrapped = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, MinFitScale,
+            SignLayoutResult wrapped = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, minScale,
                 wrap: true, allowWordBreaks: false, balanceLines: true);
             if (wrapped.Fits && (!layout.Fits || wrapped.Scale > layout.Scale * AutoWrapMinGain))
             {
@@ -99,14 +119,31 @@ public static class SignTextLayout
         {
             // The user size is a fraction of the largest size that fits; refit with the same wrapping
             // rules so smaller text can use longer lines.
-            float target = Math.Max(MinFitScale, layout.Scale * userScale);
-            layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, Math.Min(MinFitScale, target), target,
+            float target = Math.Max(minScale, layout.Scale * userScale);
+            layout = SignLayout.Fit(text, innerWidth, innerHeight, measure, innerHeight, Math.Min(minScale, target), target,
                 wrap, allowWordBreaks, balance);
         }
         float lineHeight = innerHeight * layout.Scale;
+        List<GlyphQuad> placed = GlyphQuadBuilder.Build(layout.Lines, glyphs, lineHeight, style.HAlign, innerWidth * 0.5f);
+        float slack = innerHeight * 0.5f - layout.Lines.Count * lineHeight * 0.5f;
+        float shift = style.VAlign switch
+        {
+            SignVAlign.Top => slack,
+            SignVAlign.Bottom => -slack,
+            _ => 0f,
+        };
+        if (shift != 0f)
+        {
+            for (int i = 0; i < placed.Count; i++)
+            {
+                GlyphQuad q = placed[i];
+                q.Y0 += shift;
+                q.Y1 += shift;
+                placed[i] = q;
+            }
+        }
         // The padding is the layout margin; ink beyond a glyph's line box may use it, but never leaves the panel.
-        List<GlyphQuad> quads = GlyphQuadBuilder.ClipTo(
-            GlyphQuadBuilder.Build(layout.Lines, glyphs, lineHeight), panel.Width * 0.5f, panel.Height * 0.5f);
+        List<GlyphQuad> quads = GlyphQuadBuilder.ClipTo(placed, panel.Width * 0.5f, panel.Height * 0.5f);
         return new Result(quads, panel.CenterX, panel.CenterZ, lineHeight, layout.Fits, layout.Lines);
     }
 }

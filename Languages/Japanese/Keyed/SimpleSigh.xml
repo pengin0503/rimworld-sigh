@@ -17,4 +17,47 @@
   <SimpleSigh_MissingGlyphs>看板のフォントにない文字があり、「?」で表示されています（保存された文字はそのままです）。</SimpleSigh_MissingGlyphs>
   <SimpleSigh_AutoWrap>長い文字を自動で折り返して大きく表示する</SimpleSigh_AutoWrap>
   <SimpleSigh_LongTextHint>1×1の看板では長い文字は小さくなります。長い文には2×1の掲示板（複数行）がおすすめです。</SimpleSigh_LongTextHint>
+  <SimpleSigh_EditTitleMany>{0}個の看板を編集</SimpleSigh_EditTitleMany>
+  <SimpleSigh_PasteClipboard>クリップボードの文字に置き換え</SimpleSigh_PasteClipboard>
+  <SimpleSigh_CopyClipboard>文字をクリップボードにコピー</SimpleSigh_CopyClipboard>
+  <SimpleSigh_CopiedToClipboard>看板の文字をクリップボードにコピーしました。</SimpleSigh_CopiedToClipboard>
+  <SimpleSigh_ClipboardEmpty>クリップボードに文字がありません。</SimpleSigh_ClipboardEmpty>
+  <SimpleSigh_Alignment>配置</SimpleSigh_Alignment>
+  <SimpleSigh_AlignLeft>左</SimpleSigh_AlignLeft>
+  <SimpleSigh_AlignCenter>中央</SimpleSigh_AlignCenter>
+  <SimpleSigh_AlignRight>右</SimpleSigh_AlignRight>
+  <SimpleSigh_AlignTop>上</SimpleSigh_AlignTop>
+  <SimpleSigh_AlignMiddle>中</SimpleSigh_AlignMiddle>
+  <SimpleSigh_AlignBottom>下</SimpleSigh_AlignBottom>
+  <SimpleSigh_MoreColors>その他の色…</SimpleSigh_MoreColors>
+  <SimpleSigh_AddFavorite>この色をお気に入りに保存</SimpleSigh_AddFavorite>
+  <SimpleSigh_RemoveFavorite>お気に入りから削除</SimpleSigh_RemoveFavorite>
+  <SimpleSigh_Preview>プレビュー</SimpleSigh_Preview>
+  <SimpleSigh_Shadow>文字の影</SimpleSigh_Shadow>
+  <SimpleSigh_ShadowDesc>文字の後ろに黒または白（目立つ方）の影を付け、どんな背景でも読みやすくします。</SimpleSigh_ShadowDesc>
+  <SimpleSigh_Effect>表示効果:</SimpleSigh_Effect>
+  <SimpleSigh_EffectNone>なし</SimpleSigh_EffectNone>
+  <SimpleSigh_EffectBlink>点滅</SimpleSigh_EffectBlink>
+  <SimpleSigh_EffectScroll>スクロール</SimpleSigh_EffectScroll>
+  <SimpleSigh_SettingShowText>看板の文字を表示する</SimpleSigh_SettingShowText>
+  <SimpleSigh_SettingShowTextDesc>すべての看板の文字の表示・非表示を切り替えます。設定 &gt; キーボード でキーを割り当てられます。</SimpleSigh_SettingShowTextDesc>
+  <SimpleSigh_SettingHideFromZoom>ズームアウト時に看板の文字を隠す：</SimpleSigh_SettingHideFromZoom>
+  <SimpleSigh_ZoomNever>隠さない</SimpleSigh_ZoomNever>
+  <SimpleSigh_ZoomMiddle>中程度のズームから</SimpleSigh_ZoomMiddle>
+  <SimpleSigh_ZoomFar>遠いズームから</SimpleSigh_ZoomFar>
+  <SimpleSigh_ZoomFurthest>最も遠いズームのときだけ</SimpleSigh_ZoomFurthest>
+  <SimpleSigh_SettingDefaultAutoWrap>新しい一行看板で自動折り返しを有効にする</SimpleSigh_SettingDefaultAutoWrap>
+  <SimpleSigh_SettingUseDefaultColor>新しい看板の文字色を自分で決める</SimpleSigh_SettingUseDefaultColor>
+  <SimpleSigh_SettingUseDefaultColorDesc>これから建てる看板にだけ適用されます（電光掲示板はLEDの色のまま）。既存の看板は変わりません。</SimpleSigh_SettingUseDefaultColorDesc>
+  <SimpleSigh_ChooseDefaultColor>色を選ぶ…</SimpleSigh_ChooseDefaultColor>
+  <SimpleSigh_SettingFavorites>お気に入りの色（{0} / {1}）：</SimpleSigh_SettingFavorites>
+  <SimpleSigh_ClickToRemoveFavorite>クリックでお気に入りから削除</SimpleSigh_ClickToRemoveFavorite>
+  <SimpleSigh_SettingHotkeyHint>ヒント：設定 &gt; キーボード で「看板の文字の表示切り替え（Simple Sigh）」にキーを割り当てると、1キーで全看板の文字を表示・非表示にできます。</SimpleSigh_SettingHotkeyHint>
+  <SimpleSigh_TextShown>看板の文字を表示しました。</SimpleSigh_TextShown>
+  <SimpleSigh_TextHidden>看板の文字を非表示にしました。</SimpleSigh_TextHidden>
+  <SimpleSigh_SignListTitle>このマップの看板（{0}）</SimpleSigh_SignListTitle>
+  <SimpleSigh_Search>検索</SimpleSigh_Search>
+  <SimpleSigh_NoSigns>該当する看板はありません。</SimpleSigh_NoSigns>
+  <SimpleSigh_NoTextShort>（文字なし）</SimpleSigh_NoTextShort>
+  <SimpleSigh_JumpToSign>移動</SimpleSigh_JumpToSign>
 </LanguageData>

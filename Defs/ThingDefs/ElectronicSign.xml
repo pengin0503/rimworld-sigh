@@ -9,7 +9,7 @@
   <ThingDef ParentName="SimpleSigh_SignBase">
     <defName>SimpleSigh_ElectronicSign</defName>
     <label>electronic sign</label>
-    <description>A powered LED board for multi-line messages. The text lights up in the chosen colour while the board has power and goes dark during a power cut; the message is kept and returns with the power. Select it and use "Edit text".</description>
+    <description>A powered LED board for multi-line messages. The text lights up in the chosen colour while the board has power and goes dark during a power cut; the message is kept and returns with the power. Can blink or scroll. Select it and use "Edit text".</description>
     <graphicData>
       <texPath>Things/Building/SimpleElectronicSign</texPath>
       <graphicClass>Graphic_Multi</graphicClass>
@@ -53,9 +53,12 @@
         <maxElements>256</maxElements>
         <multiline>true</multiline>
         <requiresPower>true</requiresPower>
+        <applyPlayerDefaultColor>false</applyPlayerDefaultColor>
         <glowsInDark>true</glowsInDark>
+        <allowEffects>true</allowEffects>
         <syncGlowColor>true</syncGlowColor>
         <defaultColor>(1,0.67,0.24)</defaultColor>
+        <panelColor>(0.063,0.071,0.078)</panelColor>
         <!-- Match the untinted screens drawn by tools/textures/generate_textures.py -->
         <panelRect>(0.0703,0.2969,0.8594,0.5625)</panelRect>
         <panelRectHorizontal>(0.1406,0.1641,0.7188,0.7578)</panelRectHorizontal>

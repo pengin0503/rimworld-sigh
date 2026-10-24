@@ -97,6 +97,32 @@ public static class Program
             }
         }
 
+        foreach (string file in Directory.GetFiles(Path.Combine(repo, "Defs"), "*.xml", SearchOption.AllDirectories))
+        {
+            var doc = new XmlDocument();
+            doc.Load(file);
+            foreach (XmlElement def in doc.DocumentElement.ChildNodes.OfType<XmlElement>().Where(e => e.Name != "ThingDef"))
+            {
+                string name = def["defName"]?.InnerText ?? def.GetAttribute("Name");
+                Check($"{Path.GetFileName(file)} {def.Name} {name}: type and fields exist in 1.7", () =>
+                {
+                    Type defType = typeof(ThingDef).Assembly.GetType("Verse." + def.Name) ?? typeof(ThingDef).Assembly.GetType("RimWorld." + def.Name);
+                    Require(defType != null && typeof(Def).IsAssignableFrom(defType), $"{def.Name} is not a 1.7 Def type");
+                    RequireFields(def, defType, name);
+                    foreach (string typeField in new[] { "tabWindowClass", "workerClass" })
+                    {
+                        string typeName = def[typeField]?.InnerText;
+                        if (typeName != null)
+                        {
+                            Type resolved = typeof(CompSignText).Assembly.GetType(typeName) ?? typeof(ThingDef).Assembly.GetType(typeName)
+                                ?? typeof(ThingDef).Assembly.GetType("RimWorld." + typeName) ?? typeof(ThingDef).Assembly.GetType("Verse." + typeName);
+                            Require(resolved != null, $"{typeField} {typeName} not found");
+                        }
+                    }
+                });
+            }
+        }
+
         Check("CompSignText.PostExposeData writes through the real 1.7 ScribeSaver", () =>
         {
             const string text = "研究室 C:\\new\n2行目  ";
@@ -118,7 +144,95 @@ public static class Program
             Require(saved.SelectSingleNode("/sign/simpleSighColor") != null, "colour not written");
             Require(saved.SelectSingleNode("/sign/simpleSighScale")?.InnerText == "0.5", "scale not written");
             Require(saved.SelectSingleNode("/sign/simpleSighAutoWrap")?.InnerText == "False", "auto wrap not written");
+            // v0.1 look: the v0.2 option keys are omitted, so older versions and old saves agree.
+            foreach (string key in new[] { "simpleSighHAlign", "simpleSighVAlign", "simpleSighShadow", "simpleSighEffect" })
+            {
+                Require(saved.SelectSingleNode("/sign/" + key) == null, key + " written although it has its default value");
+            }
             File.Delete(file);
+        });
+
+        Check("v0.2 GameComponents have the (Game) constructor Game.FillComponents needs", () =>
+        {
+            Require(typeof(Rendering.GameComponent_SignHotkeys).GetConstructor(new[] { typeof(Game) }) != null, "GameComponent_SignHotkeys");
+        });
+
+        Check("SimpleSighSettings writes through the real 1.7 ScribeSaver", () =>
+        {
+            var settings = new SimpleSighSettings { showText = false, hideTextFromZoom = 3, useCustomDefaultColor = true };
+            settings.AddFavorite(new UnityEngine.Color(1f, 0f, 0f));
+            settings.AddFavorite(new UnityEngine.Color(0f, 0f, 1f));
+            settings.AddFavorite(new UnityEngine.Color(1f, 0f, 0f));
+            Require(settings.favoriteColors.Count == 2, "favourite colours not de-duplicated");
+            string file = Path.Combine(Path.GetTempPath(), "simplesigh-smoke-settings.xml");
+            Scribe.saver.InitSaving(file, "settings");
+            settings.ExposeData();
+            Scribe.saver.FinalizeSaving();
+            var saved = new XmlDocument();
+            saved.Load(file);
+            Console.WriteLine($"      saved XML: {saved.DocumentElement.InnerXml}");
+            Require(saved.SelectSingleNode("/settings/showText")?.InnerText == "False", "showText not written");
+            Require(saved.SelectSingleNode("/settings/hideTextFromZoom")?.InnerText == "3", "hideTextFromZoom not written");
+            Require(saved.SelectNodes("/settings/favoriteColors/li").Count == 2, "favourite colours not written");
+            File.Delete(file);
+        });
+
+        Check("v0.2 style options are written through the real 1.7 ScribeSaver; effects only where allowed", () =>
+        {
+            var style = new Layout.SignTextStyle(0.8f, true, Layout.SignHAlign.Left, Layout.SignVAlign.Bottom, true, Layout.SignEffect.Scroll);
+            var led = new CompSignText();
+            led.Initialize(new CompProperties_SignText { maxElements = 256, multiline = true, allowEffects = true });
+            led.Apply("LED", UnityEngine.Color.white, style);
+            var plain = new CompSignText();
+            plain.Initialize(new CompProperties_SignText());
+            plain.Apply("看板", UnityEngine.Color.white, style);
+            Require(plain.Style.Effect == Layout.SignEffect.None, "a sign without allowEffects accepted an effect");
+            string file = Path.Combine(Path.GetTempPath(), "simplesigh-smoke-style.xml");
+            Scribe.saver.InitSaving(file, "sign");
+            led.PostExposeData();
+            Scribe.saver.FinalizeSaving();
+            var saved = new XmlDocument();
+            saved.Load(file);
+            Console.WriteLine($"      saved XML: {saved.DocumentElement.InnerXml}");
+            Require(saved.SelectSingleNode("/sign/simpleSighHAlign")?.InnerText == "Left", "horizontal alignment not written");
+            Require(saved.SelectSingleNode("/sign/simpleSighVAlign")?.InnerText == "Bottom", "vertical alignment not written");
+            Require(saved.SelectSingleNode("/sign/simpleSighShadow")?.InnerText == "True", "shadow not written");
+            Require(saved.SelectSingleNode("/sign/simpleSighEffect")?.InnerText == "Scroll", "effect not written");
+            File.Delete(file);
+        });
+
+        Check("floor signs start with a shadow, keep their own colour against the player default, and save the shadow", () =>
+        {
+            SimpleSighSettings settings = SimpleSighMod.Settings;
+            settings.useCustomDefaultColor = true;
+            settings.customDefaultColor = new UnityEngine.Color(0.1f, 0.1f, 0.1f);
+            try
+            {
+                var floor = new CompSignText();
+                floor.Initialize(new CompProperties_SignText { defaultShadow = true, applyPlayerDefaultColor = false, defaultColor = UnityEngine.Color.white });
+                floor.PostPostMake();
+                Require(floor.Style.Shadow, "floor sign has no shadow");
+                Require(floor.TextColor == UnityEngine.Color.white, "player default colour replaced the floor sign colour");
+                var board = new CompSignText();
+                board.Initialize(new CompProperties_SignText());
+                board.PostPostMake();
+                Require(!board.Style.Shadow, "a board started with a shadow");
+                Require(board.TextColor == settings.customDefaultColor, "player default colour not applied to a board");
+
+                floor.Apply("出口", UnityEngine.Color.white, floor.Style);
+                string file = Path.Combine(Path.GetTempPath(), "simplesigh-smoke-floor.xml");
+                Scribe.saver.InitSaving(file, "sign");
+                floor.PostExposeData();
+                Scribe.saver.FinalizeSaving();
+                var saved = new XmlDocument();
+                saved.Load(file);
+                Require(saved.SelectSingleNode("/sign/simpleSighShadow")?.InnerText == "True", "floor shadow not written");
+                File.Delete(file);
+            }
+            finally
+            {
+                settings.useCustomDefaultColor = false;
+            }
         });
 
         Check("TmpGlyphSource adapts the 1.7 ITextMeshProBackend (fake backend)", () =>

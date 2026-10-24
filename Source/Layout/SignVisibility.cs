@@ -31,5 +31,18 @@ public static class SignVisibility
         return !requiresPower || (hasPowerComp && powerOn);
     }
 
+    /// <summary>
+    /// The player can hide sign text when zoomed out: <paramref name="hideFrom"/> is the first
+    /// CameraZoomRange index (Closest 0 … Furthest 4) without text, or -1 to always show it.
+    /// </summary>
+    public static bool ZoomAllows(int currentZoom, int hideFrom) => hideFrom < 0 || currentZoom < hideFrom;
+
+    /// <summary>Blinking LED text: on for 0.6 s, off for 0.4 s, every second.</summary>
+    public static bool BlinkOn(float timeSeconds)
+    {
+        double phase = timeSeconds - System.Math.Floor(timeSeconds);
+        return phase < 0.6;
+    }
+
     public static int RenderQueueFor(bool glowsInDark) => glowsInDark ? PostLightQueue : LitQueue;
 }

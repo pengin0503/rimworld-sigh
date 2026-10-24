@@ -126,6 +126,36 @@ def led_board(tex, mask, x0, y0, x1, y1, border, panel_inset):
     return px0, py0, px1, py1
 
 
+FLOOR_PAINT = (232, 228, 216, 255)
+
+
+def floor_marking(tex, x0, y0, x1, y1, arm=22, width=4, inset=10):
+    """Painted corner brackets on the floor; the inside stays transparent so text sits on the floor itself."""
+    corners = ((x0, y0, 1, 1), (x1, y0, -1, 1), (x0, y1, 1, -1), (x1, y1, -1, -1))
+    for layer, grow in ((OUTLINE, 1), (FLOOR_PAINT, 0)):
+        for cx, cy, dx, dy in corners:
+            # Horizontal and vertical arm of an L, drawn from the corner inwards.
+            hx0, hx1 = sorted((cx, cx + dx * arm))
+            hy0, hy1 = sorted((cy, cy + dy * width))
+            vx0, vx1 = sorted((cx, cx + dx * width))
+            vy0, vy1 = sorted((cy, cy + dy * arm))
+            tex.rect(hx0 - grow, hy0 - grow, hx1 + grow, hy1 + grow, layer)
+            tex.rect(vx0 - grow, vy0 - grow, vx1 + grow, vy1 + grow, layer)
+    return x0 + inset, y0 + inset, x1 - inset, y1 - inset
+
+
+def floor_sign(tex):
+    return floor_marking(tex, 4, 4, 124, 124)
+
+
+def floor_sign_landscape3(tex):
+    return floor_marking(tex, 4, 4, 380, 124)
+
+
+def floor_sign_portrait3(tex):
+    return floor_marking(tex, 4, 4, 124, 380)
+
+
 def normalized(panel, width, height):
     """Convert a top-left pixel rect to RimWorld-style (x, y, w, h) from the bottom-left."""
     x0, y0, x1, y1 = panel
@@ -140,6 +170,14 @@ def make(name, width, height, draw, mask_suffix="_m"):
     panel = draw(tex, mask)
     tex.save(os.path.join(OUT, name + ".png"))
     mask.save(os.path.join(OUT, name + mask_suffix + ".png"))
+    return normalized(panel, width, height)
+
+
+def make_unmasked(name, width, height, draw):
+    """Untinted art for the plain Cutout shader (no stuff colour, not paintable): no mask file."""
+    tex = Canvas(width, height)
+    panel = draw(tex)
+    tex.save(os.path.join(OUT, name + ".png"))
     return normalized(panel, width, height)
 
 
@@ -181,7 +219,45 @@ def electronic_portrait(tex, mask):
     return led_board(tex, mask, 6, 8, 122, 226, 3, 12)
 
 
+def notice_board_landscape3(tex, mask):
+    post(tex, mask, 52, 92, 68, 126)
+    post(tex, mask, 316, 92, 332, 126)
+    return board(tex, mask, 6, 6, 378, 102, 3, 12)
+
+
+def notice_board_portrait3(tex, mask):
+    post(tex, mask, 22, 344, 38, 382)
+    post(tex, mask, 90, 344, 106, 382)
+    return board(tex, mask, 6, 8, 122, 354, 3, 12)
+
+
+def electronic_landscape3(tex, mask):
+    post(tex, mask, 52, 92, 68, 126)
+    post(tex, mask, 316, 92, 332, 126)
+    return led_board(tex, mask, 6, 6, 378, 102, 3, 12)
+
+
+def electronic_portrait3(tex, mask):
+    post(tex, mask, 22, 344, 38, 382)
+    post(tex, mask, 90, 344, 106, 382)
+    return led_board(tex, mask, 6, 8, 122, 354, 3, 12)
+
+
+def sign_list_icon():
+    """White silhouette for the minimized main-tab button, like vanilla's UI/Buttons/MainButtons icons."""
+    white, clear = (255, 255, 255, 255), CLEAR
+    icon = Canvas(64, 64)
+    icon.rect(8, 8, 56, 40, white)            # board
+    for y in (15, 23, 31):
+        icon.rect(14, y, 50 if y != 31 else 40, y + 3, clear)  # text lines cut out of the board
+    icon.rect(16, 40, 22, 58, white)           # posts
+    icon.rect(42, 40, 48, 58, white)
+    file = os.path.join(ROOT, "Textures", "UI", "Buttons", "MainButtons", "SimpleSigh_Signs.png")
+    icon.save(file)
+
+
 def main():
+    sign_list_icon()
     rects = {
         "SimpleSign": make("SimpleSign", 128, 128, basic_sign),
         "SimpleWallSign": make("SimpleWallSign", 128, 128, wall_sign),
@@ -193,6 +269,13 @@ def main():
     rects["SimpleNoticeBoard (east/west)"] = east
     rects["SimpleElectronicSign (north/south)"] = make("SimpleElectronicSign_north", 256, 128, electronic_landscape, "m")
     rects["SimpleElectronicSign (east/west)"] = make("SimpleElectronicSign_east", 128, 256, electronic_portrait, "m")
+    rects["SimpleNoticeBoard3 (north/south)"] = make("SimpleNoticeBoard3_north", 384, 128, notice_board_landscape3, "m")
+    rects["SimpleNoticeBoard3 (east/west)"] = make("SimpleNoticeBoard3_east", 128, 384, notice_board_portrait3, "m")
+    rects["SimpleElectronicSign3 (north/south)"] = make("SimpleElectronicSign3_north", 384, 128, electronic_landscape3, "m")
+    rects["SimpleElectronicSign3 (east/west)"] = make("SimpleElectronicSign3_east", 128, 384, electronic_portrait3, "m")
+    rects["SimpleFloorSign"] = make_unmasked("SimpleFloorSign", 128, 128, floor_sign)
+    rects["SimpleFloorSign3 (north/south)"] = make_unmasked("SimpleFloorSign3_north", 384, 128, floor_sign_landscape3)
+    rects["SimpleFloorSign3 (east/west)"] = make_unmasked("SimpleFloorSign3_east", 128, 384, floor_sign_portrait3)
     for key, value in rects.items():
         print(f"{key}: panelRect=({value[0]},{value[1]},{value[2]},{value[3]})")
 

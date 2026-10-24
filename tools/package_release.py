@@ -14,6 +14,8 @@ from pathlib import Path
 
 REQUIRED_FILES = frozenset({
     "About/About.xml",
+    "About/Preview.png",
+    "About/ModIcon.png",
     "1.7/Assemblies/SimpleSigh.dll",
     "Defs/ThingDefs/BasicSign.xml",
     "Defs/ThingDefs/WallSign.xml",
@@ -25,7 +27,8 @@ REQUIRED_FILES = frozenset({
     "Fonts/BIZUDPGothic-OFL.txt",
 })
 RUNTIME_RULES = (
-    ("About/", frozenset({"About/About.xml"})),
+    # PublishedFileId.txt only exists after a real Workshop upload; it is shipped when present.
+    ("About/", frozenset({"About/About.xml", "About/Preview.png", "About/ModIcon.png", "About/PublishedFileId.txt"})),
     ("1.7/Assemblies/", frozenset({"1.7/Assemblies/SimpleSigh.dll"})),
     ("Defs/", frozenset({".xml"})),
     ("Languages/", frozenset({".xml"})),
