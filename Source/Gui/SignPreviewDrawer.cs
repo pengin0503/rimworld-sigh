@@ -58,6 +58,11 @@ public sealed class SignPreviewDrawer
             return;
         }
         Color previous = GUI.color;
+        if (style.Shadow)
+        {
+            GUI.color = SignTextRenderer.FromRgba(SignShadow.ColorFor(SignTextRenderer.ToRgba(color)));
+            DrawQuads(panelRect, pixelsPerCell, atlas, SignShadow.Offset(layout.LineHeight));
+        }
         GUI.color = color;
         DrawQuads(panelRect, pixelsPerCell, atlas, 0f);
         GUI.color = previous;

@@ -30,12 +30,18 @@ public static class SignTextRenderer
             drawSize.x, drawSize.y, rot.AsInt, offset.x, offset.z, rotatedSize, mirrored);
     }
 
-    /// <summary>Creates the mesh, or returns false when there is nothing to draw.</summary>
-    public static bool TryBuild(CompSignText sign, ISignGlyphs glyphs, out Mesh mesh, out Material material, out Vector3 localCenter)
+    /// <summary>
+    /// Creates the mesh, or returns false when there is nothing to draw. With the shadow option the same
+    /// mesh is drawn a second time with <paramref name="shadowMaterial"/>, offset by <paramref name="shadowOffset"/>.
+    /// </summary>
+    public static bool TryBuild(CompSignText sign, ISignGlyphs glyphs, out Mesh mesh, out Material material, out Vector3 localCenter,
+        out Material shadowMaterial, out Vector3 shadowOffset)
     {
         mesh = null;
         material = null;
         localCenter = Vector3.zero;
+        shadowMaterial = null;
+        shadowOffset = Vector3.zero;
         if (sign.Text.NullOrEmpty())
         {
             return false;
@@ -56,17 +62,42 @@ public static class SignTextRenderer
         }
 
         mesh = ToMesh(layout.Quads);
-        material = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, sign.TextColor) { renderQueue = SignVisibility.RenderQueueFor(props.glowsInDark) });
+        int renderQueue = SignVisibility.RenderQueueFor(props.glowsInDark);
+        material = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, sign.TextColor) { renderQueue = renderQueue });
         localCenter = new Vector3(layout.CenterX, 0f, layout.CenterZ);
+        if (sign.Style.Shadow)
+        {
+            Color shadowColor = FromRgba(SignShadow.ColorFor(ToRgba(sign.TextColor)));
+            shadowMaterial = MaterialPool.MatFrom(new MaterialRequest(atlas, TextShader, shadowColor) { renderQueue = renderQueue });
+            float offset = SignShadow.Offset(layout.LineHeight);
+            shadowOffset = new Vector3(offset, 0f, -offset);
+        }
         return true;
     }
 
-    public static void Draw(Thing thing, Mesh mesh, Material material, Vector3 localCenter)
+    public static void Draw(Thing thing, Mesh mesh, Material material, Vector3 localCenter, Material shadowMaterial = null,
+        Vector3 shadowOffset = default)
     {
         Vector3 position = thing.DrawPos + localCenter;
+        if (shadowMaterial != null)
+        {
+            // Same render queue as the text; the lower altitude sorts the shadow behind it.
+            Vector3 shadowPosition = position + shadowOffset;
+            shadowPosition.y += Altitudes.AltInc * 0.25f;
+            Graphics.DrawMesh(mesh, Matrix4x4.TRS(shadowPosition, Quaternion.identity, Vector3.one), shadowMaterial, 0);
+        }
         position.y += Altitudes.AltInc * 0.5f;
         Graphics.DrawMesh(mesh, Matrix4x4.TRS(position, Quaternion.identity, Vector3.one), material, 0);
     }
+
+    public static uint ToRgba(Color color)
+    {
+        Color32 c = color;
+        return ((uint)c.r << 24) | ((uint)c.g << 16) | ((uint)c.b << 8) | c.a;
+    }
+
+    public static Color FromRgba(uint rgba) =>
+        new Color32((byte)(rgba >> 24), (byte)(rgba >> 16), (byte)(rgba >> 8), (byte)rgba);
 
     private static Mesh ToMesh(List<GlyphQuad> quads)
     {

@@ -152,4 +152,20 @@ public class SignTextStyleTests
         Assert.True(r.Fits);
         Assert.Equal(256, r.Quads.Count);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(3)]
+    public void LongFloorSignFits192CharactersInEveryOrientation(int rotation)
+    {
+        var north = new PanelRect(0.0365f, 0.1094f, 0.9271f, 0.7812f);
+        var east = new PanelRect(0.1094f, 0.0365f, 0.7812f, 0.9271f);
+        PanelPlacement panel = SignPanelGeometry.Place(north, east, 3f, 1f, rotation, 0f, 0f, horizontalUsesRotatedSize: true,
+            mirrorX: rotation == 3);
+        string text = string.Concat(Enumerable.Repeat("→ 食堂・寝室・倉庫はこちら。", 20)).Substring(0, 192);
+        SignTextLayout.Result r = SignTextLayout.Build(text, panel, 0.06f, true, SignTextStyle.Default, glyphs);
+        Assert.True(r.Fits);
+        Assert.Equal(text.Count(c => c != ' '), r.Quads.Count);
+    }
 }

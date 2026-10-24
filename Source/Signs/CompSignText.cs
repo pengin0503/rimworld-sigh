@@ -69,7 +69,7 @@ public class CompSignText : ThingComp
     {
         base.PostPostMake();
         SimpleSighSettings settings = SimpleSighMod.Settings;
-        if (settings.useCustomDefaultColor && !Props.requiresPower)
+        if (settings.useCustomDefaultColor && Props.applyPlayerDefaultColor)
         {
             color = settings.customDefaultColor;
         }
@@ -196,7 +196,7 @@ public class CompSignText : ThingComp
         SignRenderCache.BuiltText built = renderCache.Get(this, glyphs);
         if (built != null)
         {
-            SignTextRenderer.Draw(parent, built.Mesh, built.Material, built.LocalCenter);
+            SignTextRenderer.Draw(parent, built.Mesh, built.Material, built.LocalCenter, built.ShadowMaterial, built.ShadowOffset);
         }
     }
 

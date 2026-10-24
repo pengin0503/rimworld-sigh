@@ -87,6 +87,7 @@
         <maxElements>384</maxElements>
         <multiline>true</multiline>
         <requiresPower>true</requiresPower>
+        <applyPlayerDefaultColor>false</applyPlayerDefaultColor>
         <glowsInDark>true</glowsInDark>
         <syncGlowColor>true</syncGlowColor>
         <allowEffects>true</allowEffects>

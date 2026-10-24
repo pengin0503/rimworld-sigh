@@ -43,8 +43,9 @@ public sealed class SignRenderCache
         BuiltText built = slot.Get(key, _ =>
         {
             MissingGlyphs = GlyphQuadBuilder.HasMissingGlyphs(sign.Text, glyphs);
-            return SignTextRenderer.TryBuild(sign, glyphs, out Mesh mesh, out Material material, out Vector3 center)
-                ? new BuiltText(mesh, material, center)
+            return SignTextRenderer.TryBuild(sign, glyphs, out Mesh mesh, out Material material, out Vector3 center,
+                    out Material shadowMaterial, out Vector3 shadowOffset)
+                ? new BuiltText(mesh, material, center, shadowMaterial, shadowOffset)
                 : null;
         });
         if (slot.HasValue)
@@ -78,18 +79,19 @@ public sealed class SignRenderCache
         CompProperties_SignText props = sign.Props;
         int layoutHash = System.HashCode.Combine(props.panelRect, props.panelRectHorizontal, props.panelPadding,
             graphic?.drawSize ?? Vector2.zero, graphic?.DrawOffset(rot) ?? Vector3.zero);
-        Color32 c = sign.TextColor;
-        uint rgba = ((uint)c.r << 24) | ((uint)c.g << 16) | ((uint)c.b << 8) | c.a;
+        uint rgba = SignTextRenderer.ToRgba(sign.TextColor);
         return new SignRenderKey(sign.Text, rgba, rot.AsInt, glyphs.Generation, glyphs.SourceId, layoutHash, sign.Style);
     }
 
     public sealed class BuiltText
     {
-        public BuiltText(Mesh mesh, Material material, Vector3 localCenter)
+        public BuiltText(Mesh mesh, Material material, Vector3 localCenter, Material shadowMaterial, Vector3 shadowOffset)
         {
             Mesh = mesh;
             Material = material;
             LocalCenter = localCenter;
+            ShadowMaterial = shadowMaterial;
+            ShadowOffset = shadowOffset;
         }
 
         public Mesh Mesh { get; }
@@ -97,5 +99,10 @@ public sealed class SignRenderCache
         public Material Material { get; }
 
         public Vector3 LocalCenter { get; }
+
+        /// <summary>Null when the sign has no shadow.</summary>
+        public Material ShadowMaterial { get; }
+
+        public Vector3 ShadowOffset { get; }
     }
 }

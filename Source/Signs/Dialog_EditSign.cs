@@ -83,7 +83,7 @@ public class Dialog_EditSign : Window
         absorbInputAroundWindow = true;
     }
 
-    public override Vector2 InitialSize => new Vector2(640f, session.Multiline ? 760f : 660f);
+    public override Vector2 InitialSize => new Vector2(640f, session.Multiline ? 790f : 690f);
 
     private CompSignText Primary => signs[0];
 
@@ -126,6 +126,7 @@ public class Dialog_EditSign : Window
             y += 24f + RowGap;
         }
 
+        y = DrawOptionsRow(new Rect(inRect.x, y, inRect.width, 24f)) + RowGap;
         y = DrawAlignmentRow(new Rect(inRect.x, y, inRect.width, RowHeight)) + RowGap;
         y = DrawColorSection(inRect, y) + RowGap;
 
@@ -153,6 +154,15 @@ public class Dialog_EditSign : Window
     public override void OnAcceptKeyPressed()
     {
         // Enter inserts a line break in multiline editors; single-line editors handle it in DoWindowContents.
+    }
+
+    /// <summary>Shadow toggle (left half); the right half holds the LED effect selector where allowed.</summary>
+    private float DrawOptionsRow(Rect rect)
+    {
+        Rect left = new Rect(rect.x, rect.y, rect.width / 2f - 8f, rect.height);
+        Widgets.CheckboxLabeled(left, "SimpleSigh_Shadow".Translate(), ref shadow);
+        TooltipHandler.TipRegion(left, "SimpleSigh_ShadowDesc".Translate());
+        return rect.yMax;
     }
 
     private float DrawTextInput(Rect inRect, float y)

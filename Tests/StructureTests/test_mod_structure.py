@@ -105,10 +105,18 @@ def keyed(language):
     return {child.tag: (child.text or "") for child in root}
 
 
-def texture_files(tex_path, graphic_class):
+def texture_files(tex_path, graphic_class, shader="CutoutComplex"):
+    """Main textures, plus the `_m` masks only CutoutComplex (stuff/paint tint) reads."""
+    masked = shader == "CutoutComplex"
     if graphic_class == "Graphic_Multi":
-        return [path("Textures", tex_path + suffix + ".png") for suffix in ("_north", "_northm", "_east", "_eastm")]
-    return [path("Textures", tex_path + ".png"), path("Textures", tex_path + "_m.png")]
+        suffixes = ("_north", "_northm", "_east", "_eastm") if masked else ("_north", "_east")
+        return [path("Textures", tex_path + suffix + ".png") for suffix in suffixes]
+    files = [path("Textures", tex_path + ".png")]
+    return files + [path("Textures", tex_path + "_m.png")] if masked else files
+
+
+def is_floor_sign(resolved):
+    return resolved.findtext("altitudeLayer") == "FloorEmplacement"
 
 
 class AboutTests(unittest.TestCase):
@@ -171,7 +179,8 @@ class DefTests(unittest.TestCase):
             if graphic is None or d.get("Abstract") == "True":
                 continue
             graphic_class = graphic.findtext("graphicClass") or "Graphic_Single"
-            for file in texture_files(graphic.findtext("texPath"), graphic_class):
+            shader = thing_def(d.findtext("defName")).findtext("graphicData/shaderType") or "Cutout"
+            for file in texture_files(graphic.findtext("texPath"), graphic_class, shader):
                 self.assertTrue(os.path.isfile(file), file)
                 width, height = png_size(file)
                 self.assertGreater(width, 0)
@@ -327,6 +336,48 @@ class LargeSignTests(unittest.TestCase):
             self.assertEqual(props.findtext(field), "true", field)
         power = comp_props(sign, "CompProperties_Power")
         self.assertEqual(power.findtext("basePowerConsumption"), "60")
+
+
+class FloorSignTests(unittest.TestCase):
+    """Walkable floor markings (vanilla pattern: CaravanPackingSpot, FloorEmplacement + Standable)."""
+
+    DEFS = ("SimpleSigh_FloorSign", "SimpleSigh_FloorSignLong")
+
+    def test_floor_signs_are_walkable_floor_emplacements(self):
+        for def_name in self.DEFS:
+            sign = thing_def(def_name)
+            self.assertEqual(sign.findtext("altitudeLayer"), "FloorEmplacement", def_name)
+            self.assertEqual(sign.findtext("passability"), "Standable", def_name)
+            self.assertEqual(sign.findtext("pathCost"), "0", def_name)
+            self.assertEqual(sign.findtext("building/isEdifice"), "false", def_name)
+            self.assertEqual(sign.findtext("clearBuildingArea"), "false", def_name)
+            self.assertTrue(sign.findtext("designationCategory"), def_name)
+            self.assertEqual(sign.findtext("drawerType"), "MapMeshAndRealTime", def_name)
+
+    def test_floor_signs_cost_nothing_and_build_fast(self):
+        for def_name in self.DEFS:
+            sign = thing_def(def_name)
+            self.assertIsNone(sign.find("stuffCategories"), def_name)
+            self.assertIsNone(sign.find("costStuffCount"), def_name)
+            self.assertIsNone(sign.find("costList"), def_name)
+            self.assertEqual(sign.findtext("statBases/WorkToBuild"), "200", def_name)
+
+    def test_floor_signs_enable_shadow_and_white_text(self):
+        for def_name in self.DEFS:
+            props = comp_props(thing_def(def_name), SignCompTests.PROPS)
+            self.assertEqual(props.findtext("defaultShadow"), "true", def_name)
+            self.assertEqual(props.findtext("defaultColor"), "(1,1,1)", def_name)
+
+    def test_floor_signs_are_not_paintable(self):
+        for def_name in self.DEFS:
+            self.assertNotEqual(thing_def(def_name).findtext("building/paintable"), "true", def_name)
+
+    def test_long_floor_sign_is_3x1_and_rotatable(self):
+        sign = thing_def("SimpleSigh_FloorSignLong")
+        self.assertEqual(sign.findtext("size"), "(3,1)")
+        self.assertEqual(sign.findtext("rotatable"), "true")
+        self.assertEqual(sign.findtext("graphicData/graphicClass"), "Graphic_Multi")
+        self.assertTrue(comp_props(sign, SignCompTests.PROPS).findtext("panelRectHorizontal"))
 
 
 class LanguageTests(unittest.TestCase):
@@ -523,12 +574,22 @@ class SignCompTests(unittest.TestCase):
             cases = [(tex + ("_north" if multi else ""), props[0].findtext("panelRect"))]
             if multi:
                 cases.append((tex + "_east", props[0].findtext("panelRectHorizontal") or props[0].findtext("panelRect")))
+            floor = is_floor_sign(resolved)
             for name, rect_text in cases:
                 self.assertTrue(rect_text, f"{d.findtext('defName')} needs panelRect")
                 x, y, w, h = parse_rect(rect_text)
                 self.assertTrue(0 <= x and 0 <= y and x + w <= 1.0001 and y + h <= 1.0001, rect_text)
-                width, height, mask = read_png(path("Textures", name + ("m" if multi else "_m") + ".png"))
                 _, _, color = read_png(path("Textures", name + ".png"))
+                width, height = len(color[0]), len(color)
+                if floor:
+                    # Floor markings: text is painted straight onto the floor, so the panel is see-through.
+                    x0, x1 = round(x * width), round((x + w) * width) - 1
+                    y0, y1 = round((1 - y - h) * height), round((1 - y) * height) - 1
+                    for px in range(x0, x1 + 1, max(1, (x1 - x0) // 8)):
+                        for py in range(y0, y1 + 1, max(1, (y1 - y0) // 8)):
+                            self.assertEqual(color[py][px][3], 0, f"{name} floor panel not clear at {px},{py}")
+                    continue
+                _, _, mask = read_png(path("Textures", name + ("m" if multi else "_m") + ".png"))
                 x0, x1 = round(x * width), round((x + w) * width) - 1
                 y0, y1 = round((1 - y - h) * height), round((1 - y) * height) - 1
                 for px in range(x0, x1 + 1, max(1, (x1 - x0) // 8)):
@@ -549,6 +610,8 @@ class SignCompTests(unittest.TestCase):
             return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
         for sign in self.sign_defs():
+            if is_floor_sign(sign):
+                continue  # no panel: legibility comes from the shadow (SignShadowTests)
             props = comp_props(sign, self.PROPS)
             default = props.findtext("defaultColor") or "(0.13,0.11,0.09)"
             values = [float(v) for v in default.strip("()").replace("RGBA", "").split(",")]
@@ -565,6 +628,14 @@ class SignCompTests(unittest.TestCase):
             light, dark = sorted((luminance(panel), luminance(values[:3])), reverse=True)
             ratio = (light + 0.05) / (dark + 0.05)
             self.assertGreaterEqual(ratio, 4.5, f"{sign.findtext('defName')}: contrast {ratio:.2f}")
+
+    def test_player_default_colour_skips_dark_backgrounds(self):
+        """Dark text chosen for wooden boards must not become the default on LED screens or floor markings."""
+        for sign in self.sign_defs():
+            props = comp_props(sign, self.PROPS)
+            dark = props.findtext("glowsInDark") == "true" or is_floor_sign(sign)
+            expected = "false" if dark else None
+            self.assertEqual(props.findtext("applyPlayerDefaultColor"), expected, sign.findtext("defName"))
 
     def test_comp_classes_exist_in_source(self):
         sources = "\n".join(source_text().values())

@@ -47,6 +47,13 @@ public class CompProperties_SignText : CompProperties
     /// <summary>New signs of this def start with a text shadow (floor signs).</summary>
     public bool defaultShadow;
 
+    /// <summary>
+    /// New signs use the player's custom default text colour (mod settings). Off for signs whose text
+    /// sits on a dark background (LED screens, floor markings), where dark text chosen for wooden
+    /// boards would be unreadable.
+    /// </summary>
+    public bool applyPlayerDefaultColor = true;
+
     /// <summary>Colour of the display panel, used by the editor preview (the texture itself is not read).</summary>
     public Color panelColor = new Color(0.925f, 0.894f, 0.808f, 1f);
 

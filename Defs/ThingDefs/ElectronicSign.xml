@@ -53,6 +53,7 @@
         <maxElements>256</maxElements>
         <multiline>true</multiline>
         <requiresPower>true</requiresPower>
+        <applyPlayerDefaultColor>false</applyPlayerDefaultColor>
         <glowsInDark>true</glowsInDark>
         <syncGlowColor>true</syncGlowColor>
         <defaultColor>(1,0.67,0.24)</defaultColor>

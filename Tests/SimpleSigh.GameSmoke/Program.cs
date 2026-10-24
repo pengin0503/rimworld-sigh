@@ -201,6 +201,40 @@ public static class Program
             File.Delete(file);
         });
 
+        Check("floor signs start with a shadow, keep their own colour against the player default, and save the shadow", () =>
+        {
+            SimpleSighSettings settings = SimpleSighMod.Settings;
+            settings.useCustomDefaultColor = true;
+            settings.customDefaultColor = new UnityEngine.Color(0.1f, 0.1f, 0.1f);
+            try
+            {
+                var floor = new CompSignText();
+                floor.Initialize(new CompProperties_SignText { defaultShadow = true, applyPlayerDefaultColor = false, defaultColor = UnityEngine.Color.white });
+                floor.PostPostMake();
+                Require(floor.Style.Shadow, "floor sign has no shadow");
+                Require(floor.TextColor == UnityEngine.Color.white, "player default colour replaced the floor sign colour");
+                var board = new CompSignText();
+                board.Initialize(new CompProperties_SignText());
+                board.PostPostMake();
+                Require(!board.Style.Shadow, "a board started with a shadow");
+                Require(board.TextColor == settings.customDefaultColor, "player default colour not applied to a board");
+
+                floor.Apply("出口", UnityEngine.Color.white, floor.Style);
+                string file = Path.Combine(Path.GetTempPath(), "simplesigh-smoke-floor.xml");
+                Scribe.saver.InitSaving(file, "sign");
+                floor.PostExposeData();
+                Scribe.saver.FinalizeSaving();
+                var saved = new XmlDocument();
+                saved.Load(file);
+                Require(saved.SelectSingleNode("/sign/simpleSighShadow")?.InnerText == "True", "floor shadow not written");
+                File.Delete(file);
+            }
+            finally
+            {
+                settings.useCustomDefaultColor = false;
+            }
+        });
+
         Check("TmpGlyphSource adapts the 1.7 ITextMeshProBackend (fake backend)", () =>
         {
             var backend = new FakeTextBackend();

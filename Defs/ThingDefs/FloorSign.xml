@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <!--
+    Floor markings: text painted straight onto the floor. Built like vanilla spots (CaravanPackingSpot):
+    FloorEmplacement altitude, Standable, no materials. Not edifices, so they can lie under furniture
+    and pawns walk over them freely. The text shadow is on by default so the text reads on any floor.
+  -->
+  <ThingDef Name="SimpleSigh_FloorSignBase" ParentName="BuildingBase" Abstract="True">
+    <thingClass>Building</thingClass>
+    <drawerType>MapMeshAndRealTime</drawerType>
+    <notifyMapRemoved>true</notifyMapRemoved>
+    <altitudeLayer>FloorEmplacement</altitudeLayer>
+    <passability>Standable</passability>
+    <pathCost>0</pathCost>
+    <clearBuildingArea>false</clearBuildingArea>
+    <useHitPoints>false</useHitPoints>
+    <scatterableOnMapGen>false</scatterableOnMapGen>
+    <designationCategory>Furniture</designationCategory>
+    <terrainAffordanceNeeded>Light</terrainAffordanceNeeded>
+    <statBases>
+      <WorkToBuild>200</WorkToBuild>
+      <Beauty>0</Beauty>
+    </statBases>
+    <building>
+      <isEdifice>false</isEdifice>
+      <canPlaceOverImpassablePlant>false</canPlaceOverImpassablePlant>
+      <ai_chillDestination>false</ai_chillDestination>
+      <wakeDormantPawnsOnConstruction>false</wakeDormantPawnsOnConstruction>
+      <artificialForMeditationPurposes>false</artificialForMeditationPurposes>
+    </building>
+  </ThingDef>
+
+  <ThingDef ParentName="SimpleSigh_FloorSignBase">
+    <defName>SimpleSigh_FloorSign</defName>
+    <label>floor sign</label>
+    <description>A short message painted onto the floor. Costs no materials, can be walked over and does not block furniture. Select it and use "Edit text".</description>
+    <graphicData>
+      <texPath>Things/Building/SimpleFloorSign</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <shaderType>Cutout</shaderType>
+      <drawSize>(1,1)</drawSize>
+    </graphicData>
+    <size>(1,1)</size>
+    <rotatable>false</rotatable>
+    <uiOrder>2956</uiOrder>
+    <comps>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>64</maxElements>
+        <multiline>false</multiline>
+        <defaultShadow>true</defaultShadow>
+        <applyPlayerDefaultColor>false</applyPlayerDefaultColor>
+        <defaultColor>(1,1,1)</defaultColor>
+        <panelColor>(0.45,0.43,0.40)</panelColor>
+        <!-- Inside the painted corner marks drawn by tools/textures/generate_textures.py -->
+        <panelRect>(0.1094,0.1094,0.7812,0.7812)</panelRect>
+      </li>
+    </comps>
+  </ThingDef>
+
+  <ThingDef ParentName="SimpleSigh_FloorSignBase">
+    <defName>SimpleSigh_FloorSignLong</defName>
+    <label>long floor sign</label>
+    <description>A longer message painted onto the floor, for directions along corridors. Can span several lines. Costs no materials, can be walked over and does not block furniture. Select it and use "Edit text".</description>
+    <graphicData>
+      <texPath>Things/Building/SimpleFloorSign3</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <shaderType>Cutout</shaderType>
+      <drawSize>(3,1)</drawSize>
+    </graphicData>
+    <size>(3,1)</size>
+    <rotatable>true</rotatable>
+    <defaultPlacingRot>North</defaultPlacingRot>
+    <uiOrder>2957</uiOrder>
+    <comps>
+      <li Class="SimpleSigh.Signs.CompProperties_SignText">
+        <maxElements>192</maxElements>
+        <multiline>true</multiline>
+        <defaultShadow>true</defaultShadow>
+        <applyPlayerDefaultColor>false</applyPlayerDefaultColor>
+        <defaultColor>(1,1,1)</defaultColor>
+        <panelColor>(0.45,0.43,0.40)</panelColor>
+        <!-- Inside the painted corner marks drawn by tools/textures/generate_textures.py -->
+        <panelRect>(0.0365,0.1094,0.9271,0.7812)</panelRect>
+        <panelRectHorizontal>(0.1094,0.0365,0.7812,0.9271)</panelRectHorizontal>
+        <panelPadding>0.06</panelPadding>
+      </li>
+    </comps>
+  </ThingDef>
+
+</Defs>
