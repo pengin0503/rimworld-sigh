@@ -1,18 +1,24 @@
 name: Simple Sigh prerelease
 
-# Publishing a GitHub Release is opt-in via a v-prefixed tag.
+# Publishing a GitHub Release is opt-in via a v-prefixed tag, pushed or entered in Actions > Run workflow on main.
+# A dispatched run creates the tag on the checked commit only after every check passes.
 # The archive contains the committed SimpleSigh.dll; no in-game validation.
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to create on the selected main commit, e.g. v0.2.0
+        required: true
 
 permissions:
   contents: read
 
 jobs:
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     name: Validate and publish installable ZIP
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -21,6 +27,9 @@ jobs:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: '1'
       DOTNET_NOLOGO: 'true'
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
       - name: Checkout tagged source
         uses: actions/checkout@v7
@@ -29,10 +38,26 @@ jobs:
       - name: Require tag to point to a commit on main
         shell: bash
         run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::Tag must look like v1.2.3 or v1.2.3-test.1: $TAG" >&2
+            exit 1
+          fi
           git fetch origin main
           if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
             echo 'Release tag must reference a commit reachable from main' >&2
             exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            # A retry after a failed publish finds its own tag on this commit and no release yet; anything else stops.
+            existing=$(git ls-remote origin "refs/tags/$TAG" | cut -f1)
+            if [ -n "$existing" ] && [ "$existing" != "$GITHUB_SHA" ]; then
+              echo "::error::Tag $TAG already exists on another commit" >&2
+              exit 1
+            fi
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "::error::Release $TAG already exists" >&2
+              exit 1
+            fi
           fi
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -46,9 +71,9 @@ jobs:
         shell: bash
         run: |
           version=$(python -c "import xml.etree.ElementTree as E;print(E.parse('About/About.xml').findtext('modVersion'))")
-          base="${GITHUB_REF_NAME#v}"; base="${base%%-*}"
+          base="${TAG#v}"; base="${base%%-*}"
           if [ "$base" != "$version" ]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match About.xml modVersion $version" >&2
+            echo "::error::Tag $TAG does not match About.xml modVersion $version" >&2
             exit 1
           fi
       - name: Require the committed DLL to match the tagged source
@@ -68,8 +93,8 @@ jobs:
       - name: Build installable ZIP from committed binary
         run: |
           python tools/package_release.py \
-            --version "$GITHUB_REF_NAME" \
-            --output "dist/SimpleSigh-${GITHUB_REF_NAME}.zip"
+            --version "$TAG" \
+            --output "dist/SimpleSigh-${TAG}.zip"
       - name: Write prerelease notice
         shell: bash
         run: |
@@ -86,12 +111,25 @@ jobs:
           日本語描画・セーブ/ロード・電光掲示板の電力動作は未確認です。
           セーブデータをバックアップしたうえでテストしてください。
           EOF
+      - name: Create the tag on this commit (dispatched runs)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Checked again here: another run may have created the tag since the first check.
+          existing=$(git ls-remote origin "refs/tags/$TAG" | cut -f1)
+          if [ -z "$existing" ]; then
+            gh api "repos/$GH_REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA"
+          elif [ "$existing" != "$GITHUB_SHA" ]; then
+            echo "::error::Tag $TAG points to $existing, not $GITHUB_SHA" >&2
+            exit 1
+          fi
       - name: Publish GitHub prerelease with runtime ZIP
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          gh release create "$GITHUB_REF_NAME" "dist/SimpleSigh-${GITHUB_REF_NAME}.zip" \
+          gh release create "$TAG" "dist/SimpleSigh-${TAG}.zip" \
             --verify-tag --prerelease --latest=false \
-            --title "Simple Sigh ${GITHUB_REF_NAME} (test build)" \
+            --title "Simple Sigh ${TAG} (test build)" \
             --notes-file release-notes.md
