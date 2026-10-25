@@ -180,8 +180,9 @@ python tools/package_release.py --version v0.2.0-test --output dist/SimpleSigh-v
 `.github/workflows/ci.yml` はPRへの更新時にXMLテスト・C#単体テスト・MOD本体のビルド（コミット済みDLLとの一致確認を含む）・ZIPパッケージングテストを実行し、成功時は試用ZIPをArtifactとして添付します。
 ソースを変更したら `tools/verify.sh` で `1.7/Assemblies/SimpleSigh.dll` を再ビルドし、一緒にコミットしてください。
 
-`.github/workflows/release.yml` は **mainに含まれるコミットへ`v`で始まるタグをpushした場合のみ**、
-再度テスト・ZIP作成を行い、GitHub ReleaseのAssetsに直接ダウンロードできるZIPをアップロードします。
+`.github/workflows/release.yml` は **mainに含まれるコミットへ`v`で始まるタグをpushした場合**、または
+GitHubのActions → Simple Sigh prerelease → Run workflow でmainを選んでタグを入力した場合のみ、
+再度テスト・ZIP作成を行い（手動実行では検査に通った後でタグを作ります）、GitHub ReleaseのAssetsに直接ダウンロードできるZIPをアップロードします。
 ゲーム内テストが終わるまでは**プレリリース**として公開します。単なるPRのマージではReleaseは作られません。
 
 例（ゲーム内テスト未完了のテスト版タグを切る場合。**mainへマージ後**）：
