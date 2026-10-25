@@ -15,8 +15,11 @@ public class GameComponent_SignHotkeys : GameComponent
     public override void GameComponentOnGUI()
     {
         toggleKey ??= DefDatabase<KeyBindingDef>.GetNamedSilentFail("SimpleSigh_ToggleSignText");
-        // Not while a dialog takes input (e.g. typing a letter bound to this key in the sign editor).
-        if (toggleKey != null && !Find.WindowStack.AnyWindowAbsorbingAllInput && toggleKey.KeyDownEvent)
+        // Not while a dialog takes input, and not while any text field has keyboard focus: game components get key
+        // events before windows do, so typing a letter bound to this key in a tab's search field (which does not absorb
+        // input) would otherwise toggle the text and swallow the letter.
+        if (toggleKey != null && !Find.WindowStack.AnyWindowAbsorbingAllInput && UnityEngine.GUIUtility.keyboardControl == 0
+            && toggleKey.KeyDownEvent)
         {
             UnityEngine.Event.current.Use();
             SimpleSighSettings settings = SimpleSighMod.Settings;

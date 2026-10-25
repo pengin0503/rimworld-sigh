@@ -6,8 +6,6 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - main
 
 permissions:
   contents: read
@@ -44,6 +42,23 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
+      - name: Require the tag to match About.xml modVersion
+        shell: bash
+        run: |
+          version=$(python -c "import xml.etree.ElementTree as E;print(E.parse('About/About.xml').findtext('modVersion'))")
+          base="${GITHUB_REF_NAME#v}"; base="${base%%-*}"
+          if [ "$base" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match About.xml modVersion $version" >&2
+            exit 1
+          fi
+      - name: Require the committed DLL to match the tagged source
+        shell: bash
+        run: |
+          dotnet build Source/SimpleSigh.csproj --configuration Release --nologo -warnaserror
+          if ! git diff --quiet -- 1.7/Assemblies/SimpleSigh.dll; then
+            echo '::error::1.7/Assemblies/SimpleSigh.dll does not match a Release build of the tagged source.' >&2
+            exit 1
+          fi
       - name: Check packaging rules
         run: python -m unittest discover -s Tests/PackagingTests -v
       - name: Check mod structure
@@ -79,91 +94,4 @@ jobs:
           gh release create "$GITHUB_REF_NAME" "dist/SimpleSigh-${GITHUB_REF_NAME}.zip" \
             --verify-tag --prerelease --latest=false \
             --title "Simple Sigh ${GITHUB_REF_NAME} (test build)" \
-            --notes-file release-notes.md
-
-  first-test-release:
-    # One-time bootstrap for PR #3: after merge into main publish v0.1.0-test.1.
-    # Later main pushes are no-ops once this prerelease exists.
-    if: github.ref == 'refs/heads/main'
-    name: Publish first test release (once)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
-      DOTNET_NOLOGO: 'true'
-    steps:
-      - name: Checkout merged commit
-        uses: actions/checkout@v7
-      - name: Check whether initial prerelease exists
-        id: gate
-        shell: bash
-        run: |
-          if gh release view v0.1.0-test.1 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo 'create=false' >> "$GITHUB_OUTPUT"
-            echo 'v0.1.0-test.1 already published; no new release.'
-          else
-            echo 'create=true' >> "$GITHUB_OUTPUT"
-          fi
-      - name: Set up Python
-        if: steps.gate.outputs.create == 'true'
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.13'
-      - name: Set up .NET 10
-        if: steps.gate.outputs.create == 'true'
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.x'
-      - name: Test package rules
-        if: steps.gate.outputs.create == 'true'
-        run: python -m unittest discover -s Tests/PackagingTests -v
-      - name: Test XML and mod structure
-        if: steps.gate.outputs.create == 'true'
-        run: python -m unittest discover -s Tests/StructureTests -v
-      - name: Test C# text and layout
-        if: steps.gate.outputs.create == 'true'
-        run: dotnet test Tests/SimpleSigh.Text.Tests/SimpleSigh.Text.Tests.csproj --configuration Release --nologo
-      - name: Package runtime-only files
-        if: steps.gate.outputs.create == 'true'
-        run: |
-          python tools/package_release.py \
-            --version v0.1.0-test.1 \
-            --output dist/SimpleSigh-v0.1.0-test.1.zip
-      - name: Write initial prerelease notes
-        if: steps.gate.outputs.create == 'true'
-        shell: bash
-        run: |
-          cat > release-notes.md <<'EOF'
-          ## Simple Sigh 0.1.0 テスト版 — RimWorld 1.7
-
-          **ゲーム内動作未確認のプレリリース**です。
-          このビルドは構造・C#ユニット・ZIPパッケージの自動テストを通過していますが、
-          RimWorld本体での起動、文字表示、壁掛け設置、セーブ／ロード、
-          LED表示と停電・復電はまだ検証していません。
-
-          **インストール:** Assets の SimpleSigh-v0.1.0-test.1.zip をダウンロードし、
-          展開した SimpleSigh フォルダを RimWorld/Mods/ にコピーしてください。
-          ゲーム内でMODを有効にし、再起動します。
-          GitHubの Source code (zip) はMODインストール用ではありません。
-
-          **既知のコードレビュー指摘（未修正）:**
-          - フォントバックエンド交換時のキャッシュ更新
-          - テキストを空にした際のGPUメッシュ解放
-          - 看板境界にあるグリフの部分クリッピング
-          - ソースと同梱DLLの整合性を検証スクリプトで強制していないこと
-
-          既存セーブには必ずバックアップを取ってから導入してください。
-          詳細は https://github.com/pengin0503/rimworld-sigh を参照。
-          EOF
-      - name: Create tag and publish prerelease
-        if: steps.gate.outputs.create == 'true'
-        shell: bash
-        run: |
-          gh release create v0.1.0-test.1 dist/SimpleSigh-v0.1.0-test.1.zip \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" --prerelease --latest=false \
-            --title 'Simple Sigh v0.1.0-test.1 (untested in game)' \
             --notes-file release-notes.md

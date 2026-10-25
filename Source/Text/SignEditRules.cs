@@ -17,6 +17,13 @@ public readonly struct SignEditRules
     public bool Multiline { get; }
 
     /// <summary>
+    /// Whether Enter confirms the editor: only single-line editors, and never while an IME is composing text, so
+    /// pressing Enter to accept a kana-kanji conversion cannot close the editor (#10). Multiline editors take Enter as
+    /// a line break.
+    /// </summary>
+    public static bool EnterConfirms(bool multiline, string imeComposition) => !multiline && string.IsNullOrEmpty(imeComposition);
+
+    /// <summary>
     /// Rules that every target accepts: the smallest limit, and line breaks only if all targets allow them.
     /// Text valid under the result is therefore valid for each target, so nothing is truncated on save.
     /// </summary>
