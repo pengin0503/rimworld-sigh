@@ -1,163 +1,26 @@
-# Simple Sigh — RimWorld 1.7 用の自由入力看板 MOD
+# Simple Sigh
 
-**Simple Sigh** は、コロニーに自由な文章を書ける看板を追加する MOD です。
-木材・石材・金属で作る小さな看板から、壁掛け看板、複数行の掲示板（2×1／3×1）、電気で光る電光掲示板、床に描く床看板まで用意しています。
-日本語・英数字・記号を入力し、看板の表示面に文字を描画することを目的としています。
+**日本語** | [English](README.en.md)
 
-> **現在はテスト版（v0.2.0）です。** RimWorld 1.7 の参照 DLL に対するビルドと自動テストは実施していますが、
-> **実際のゲーム内起動・日本語の表示・セーブ／ロード・電力動作・v0.2 の新機能はすべて未検証**です。
-> 既存セーブへ導入する場合は必ずバックアップしてください。
+RimWorld 1.7に自由な文章を書ける看板を追加するMODです。Harmonyは不要です。
 
-| 項目 | 内容 |
-| --- | --- |
-| MOD 名 | Simple Sigh |
-| packageId | `pengin0503.simplesigh` |
-| 対応ゲーム | RimWorld **1.7 のみ** |
-| 前提 MOD | なし（Harmony も不要） |
-| 同梱される DLL | `1.7/Assemblies/SimpleSigh.dll` |
-| 同梱フォント | `Fonts/BIZUDPGothic-Bold.ttf`（BIZ UDPゴシック Bold、SIL Open Font License 1.1） |
-| 開発・試用状況 | M1（基本看板）、M2（壁掛け・掲示板）、M3（電光掲示板）、v0.2（下記の追加機能）を実装。**ゲーム内は未確認** |
+> **テスト版です。ゲーム内での起動、文字表示、セーブ・ロード、電力動作は未検証です。** 既存セーブを使う前にバックアップしてください。途中削除の安全性も保証されません。
 
-## ゲーム内でできること
+## 看板と機能
 
-### 8種類の看板
+- 小型看板と壁掛け看板は1×1、最大64文字です。
+- 掲示板は2×1で256文字、大型は3×1で384文字までの複数行に対応します。
+- 電光掲示板は2×1または3×1で、電気の研究と電力が必要です。停電時は表示が消え、点滅やスクロールを選べます。
+- 床看板は1×1または3×1で、床に文字を描きます。
 
-| 建築物 | サイズ | 主な機能 |
-| --- | --- | --- |
-| **看板** | 1×1 | 木・石・金属で作成。最大64文字（入力は1行）。長い文字は自動で折り返して大きく表示 |
-| **壁掛け看板** | 1×1 | 壁に取り付ける小型看板。最大64文字（入力は1行）。長い文字は自動で折り返して大きく表示 |
-| **掲示板** | 2×1 | 最大256文字・複数行。日本語の文字単位・英語の単語単位で自動折り返し |
-| **大型掲示板** | 3×1 | 最大384文字・複数行 |
-| **電光掲示板** | 2×1 | 最大256文字・複数行。研究「電気」が必要。40W消費し、停電中は文字が消えて復電時に復元。点滅・スクロール表示 |
-| **大型電光掲示板** | 3×1 | 最大384文字・複数行。研究「電気」、コンポーネント3個、60W。点滅・スクロール表示 |
-| **床看板** | 1×1 | 床に直接描く文字（最大64文字・1行）。材料不要・すぐ建設でき、上を歩けて家具も置ける。文字の影つき |
-| **長い床看板** | 3×1 | 床に描く道案内など（最大192文字・複数行）。向きを変えられる。文字の影つき |
+建てた看板を選び「文字を編集」から文章・色・大きさを設定します。コピー・貼り付け、複数看板の一括編集、文字揃え、影、クリップボード、お気に入りの色も利用できます。画面下の看板一覧から検索・編集・移動できます。表示距離などはMOD設定で変更できます。
 
-看板・壁掛け看板・掲示板・電光掲示板の**枠はバニラの塗装（ペイント）で色を変えられます**。表示面の色は変わりません。
+日本語表示用フォントを同梱していますが、ゲーム内表示は未検証です。フォントにない絵文字などは `?` になる場合があります。小さな看板や東西向きの大型看板では長文が読みにくくなります。
 
-**使用例：** 倉庫に「食料保管庫」、寝室に「来客用」、工房に「加工室」、入口に「立入禁止」などの文字を表示できます。
+## 導入
 
-### 看板への文字入力
+[Releases](https://github.com/pengin0503/rimworld-sigh/releases) のAssetsから `SimpleSigh-vX.Y.Z.zip` を取得し、展開した `SimpleSigh` フォルダを `RimWorld/Mods` に置きます。Coreの後に有効化して再起動してください。GitHubの「Source code」はMOD用ZIPではありません。
 
-1. ゲーム内の建築メニューから看板を選び、建設します。素材が選べる看板は木材・石材・金属から選択できます。
-2. 建設した看板をクリックし、**「文字を編集」**（Edit text）を押します。
-3. 文字を入力し、文字色と大きさを設定して **OK** で確定します。**キャンセル**すると変更されません。
-4. 掲示板・電光掲示板では改行を入力できます。画面に収まるよう文字を折り返し／縮小します。
+古い `v0.1.0-test.1` には日本語表示と文字サイズの修正やv0.2の機能が含まれません。公開されている版を確認してください。配布版がない場合は [PR #3の成功したCI](https://github.com/pengin0503/rimworld-sigh/pull/3/checks) からテスト用ZIPを入手できる場合があります。GitHubへのログインが必要な場合があり、保存期間が過ぎると取得できません。
 
-看板の **「文字をコピー」／「文字を貼り付け」** で別の看板に設定を複製できます。
-入力上限を超えた場合や使用できない制御文字は、黙って切り捨てずエラーとして扱います。
-
-**編集画面でできること（v0.2）：**
-
-- **複数の看板をまとめて編集**：看板を複数選択して「文字を編集」を押すと、全部に同じ文字・色・設定を書き込みます（文字数の上限は選んだ看板の中で一番小さいもの）。
-- **OSのクリップボード**：「クリップボードの文字に置き換え」「文字をクリップボードにコピー」で、ほかのアプリの文章をそのまま使えます。
-- **文字の揃え**：左・中央・右、上・中央・下。
-- **自由な色**：パレットのほかに「その他の色…」でRimWorld標準のカラーピッカー（色相環・RGB/HSV）を使えます。よく使う色は**お気に入り**（最大12色）に登録できます。
-- **文字の影**：文字の後ろに黒または白（目立つ方）の影を付けます。床看板は最初からオンです。
-- **表示効果（電光掲示板のみ）**：点滅、または右から左へ流れるスクロール表示。
-- プレビューで、実際の看板と同じ配置・効果を確認できます。
-
-**MOD設定（オプション → MODの設定 → Simple Sigh）：** 看板の文字を表示するか、ズームアウト時に文字を隠す距離、
-新しい看板の自動折り返しの初期値、新しい看板の文字色の初期値（電光掲示板・床看板には適用しません）、お気に入りの色の整理。
-**ホットキー：** オプション → キーボード設定の「看板の文字の表示切り替え（Simple Sigh）」にキーを割り当てると、マップ上で文字の表示を切り替えられます（初期状態では未割り当て）。
-
-**看板一覧：** 画面下のボタン列にある看板アイコン（「看板」）から、現在のマップの看板を一覧表示できます。
-文字で検索（ひらがな／カタカナ、全角／半角、大文字／小文字を区別しない）し、「移動」でその看板へカメラを移動、「文字を編集」で直接編集できます。
-
-**日本語の表示（#4）：** 看板の文字は MOD に同梱した日本語フォント（BIZ UDPゴシック Bold）で描画します。
-ゲームの表示言語に関係なく、漢字・ひらがな・カタカナ・英数字・記号を表示できます。
-同梱フォントには JIS 第1・第2水準の漢字（6355字）がすべて含まれ、ゲームの日本語翻訳で使われている全2414文字も含まれることを確認しています（オフライン）。
-「日本語で `???` になる」問題が残っている場合は、`Player.log` の `[Simple Sigh]` で始まる行を添えて Issue で報告してください。
-フォントにない文字（絵文字など）だけが `?` になります（保存された文章は変わりません）。
-フォントを読み込めなかった場合はログにエラーを1回出し、ゲーム標準フォントで描画します（この場合は日本語が `?` になることがあります）。
-
-**長い文字（#5）：** 1×1 の看板では、4文字以上の和文ラベルを行の長さをそろえて折り返し（例：「立入／禁止」）、
-1行に詰めるより大きく表示します。1〜3文字は従来どおり1行で大きく表示し、英単語の途中では改行しません。
-編集画面の「長い文字を自動で折り返して大きく表示する」で看板ごとに切り替えられます（初期値：オン）。
-1×1 のマスはもともと小さいため、7文字以上の文章は拡大しないと読みにくくなります。
-長い文には **2×1 の掲示板** をおすすめします。詳しい数値は [`docs/testing/legibility.md`](docs/testing/legibility.md) を参照してください。
-
-**電光掲示板**は金属と工業用コンポーネント2個（大型は3個）で建築する想定です。
-電力が供給される間だけ文字と周囲の小さな光が点灯し、停電時には表示が消えます。
-点滅・スクロールはゲーム速度に関係なく一定の速さで動きます（一時停止中も動きます）。
-実際の明るさ・文字位置・壁への設置方法などはゲーム内での最終確認が必要です。
-
-## インストール方法
-
-### 方法A：GitHub Releases からZIPをダウンロード（推奨）
-
-1. **[Releases（配布ページ）](https://github.com/pengin0503/rimworld-sigh/releases)** を開きます。リリースがまだ存在しない場合は、方法Bで試用できます。
-   - **注意**：v0.2.0 のリリースが公開されるまで、Releases の最新は `v0.1.0-test.1` です。この版には日本語が「？」になる問題（#4）と文字が小さすぎる問題（#5）の修正、v0.2 の新機能が入っていません。v0.2 を試す場合は方法B（CIのZIP）を使ってください。
-
-2. リリースの **Assets** から `SimpleSigh-vX.Y.Z.zip` をダウンロードします。GitHub が自動で表示する **Source code (zip)** はMOD用のZIPではありません。
-3. ZIPを**一度**展開します。中に `SimpleSigh` フォルダが1つあります。
-4. この `SimpleSigh` フォルダを、RimWorldインストール先の `Mods` フォルダにコピーします。
-
-例（Steam版Windowsの標準的な場所）：
-
-```text
-C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\SimpleSigh\
-├─ About\About.xml
-├─ 1.7\Assemblies\SimpleSigh.dll
-├─ Defs\
-├─ Fonts\BIZUDPGothic-Bold.ttf（看板用フォント）と BIZUDPGothic-OFL.txt
-├─ Languages\
-└─ Textures\
-```
-
-5. RimWorld **1.7** を起動して「MOD」メニューで **Simple Sigh** を有効にします。順序は Core の後に配置し、ゲームを再起動してください。
-6. 新規セーブ（またはバックアップした既存セーブ）でまず基本看板から確認してください。
-
-ZIPはMODに必要な**実行時ファイルだけ**を収録します。`Source`、`Tests`、`docs`、ゲーム本体のDLLは含みません。
-
-### 方法B：PRで開発中のテスト版を入れる
-
-GitHub Releaseが未作成でも、**[PR #3 のCI実行一覧](https://github.com/pengin0503/rimworld-sigh/pull/3/checks)** の成功した `Simple Sigh CI` を開くと、
-`SimpleSigh-pr.zip` のテスト用Artifactをダウンロードできます。
-展開後は方法Aと同じように `SimpleSigh` フォルダを `RimWorld/Mods/` に置いてください。
-GitHubへのログインが必要な場合や、Artifactの保存期間（30日）によって入手できない場合があります。
-
-**PRを作成・マージしただけではMODは自動的にゲームへインストールされません。**
-上記のようにファイルをダウンロード・配置し、ゲーム内で有効化してください。
-
-### インストールできない場合
-
-- フォルダが `Mods/SimpleSigh/SimpleSigh/About/About.xml` のように二重になっていないか確認。
-- RimWorld のバージョンが **1.7** であることを確認。
-- `SimpleSigh.dll` が `Mods/SimpleSigh/1.7/Assemblies/` に存在することを確認。
-- ゲーム内でエラーが出たらログと再現手順を添えて [Issues](https://github.com/pengin0503/rimworld-sigh/issues) に報告してください。
-- セーブ破損を避けるため、検証中はバックアップ済みのセーブを使ってください。
-
-### RimSort で「Mods with Missing Properties」と表示される場合
-
-RimSort のこの警告は **Package ID** と **Publish Field ID（Steam Workshop の ID）** の2項目だけを調べます。
-Simple Sigh の Package ID（`pengin0503.simplesigh`）は `About/About.xml` にあります。
-Publish Field ID は `About/PublishedFileId.txt` から読まれ、**Steam Workshop に実際にアップロードしたときに RimWorld が作成する**ファイルです。
-Workshop に出していないローカルMODでは警告が出るのが正常で、MODの動作には影響しません。
-
-- 個人で使う場合：RimSort の警告ウィンドウで Simple Sigh を **Ignore** にすれば、以後表示されません。
-- 架空のIDを書いたファイルを置かないでください。RimSort が別の Workshop アイテムとして扱い、更新確認などで誤動作します。
-
-## 制限・未検証事項
-
-- 同梱フォントによる日本語描画はオフラインで検証済みですが、ゲーム内（Waylith のテクスチャ転送・シェーダー）での表示は未確認です。
-- 1×1 の看板は表示面が約 0.72×0.44 マスしかなく、長い文はズームしないと読めません（`docs/testing/legibility.md`）。
-- 掲示板・電光掲示板（複数行）は従来どおり、大きく表示するために長い英単語を途中で折り返すことがあります。
-- 文字の向き・回転・照明・霧・UIスケール・電光掲示板の復電動作・スクロール表示は実機確認が必要です。
-- 絵文字・複雑な書記体系の完全対応、壁掛け看板の横向きの絵は未実装です。
-- 床看板の文字は床の上に直接描くため、明るい床では影をオフにすると読みにくくなります。
-- 3×1 の看板を東西向きにすると表示面が縦長になり、長文はかなり小さく表示されます（文字は切れません）。
-- 看板一覧の検索は漢字の読みでは探せません（「倉庫」を「そうこ」では見つけられません）。
-- 現時点で、既存セーブからMODを削除した場合の互換性は保証しません。
-
-## ライセンス・クレジット
-
-- 看板用フォント：**BIZ UDPゴシック**（Copyright 2022 The BIZ UDGothic Project Authors、株式会社モリサワ）。
-  [SIL Open Font License 1.1](Fonts/BIZUDPGothic-OFL.txt) に基づき、改変せずに同梱しています。
-  入手元：[google/fonts `ofl/bizudpgothic`](https://github.com/google/fonts/tree/main/ofl/bizudpgothic)。
-
-## English
-
-Simple Sigh adds editable signs to RimWorld 1.7: small and wall signs, 2×1 and 3×1 noticeboards, powered displays and floor signs. Edit text, size and color; v0.2 also adds bulk editing, alignment, clipboard support, shadows and blinking or scrolling powered displays. A sign list lets you search and locate signs. The bundled BIZ UDP Gothic font supports Japanese; unsupported characters such as emoji may display as question marks.
-
-**The v0.2 test version has not been verified in-game**, including rendering, save/load and power behavior. Back up saves. Harmony is not required. Download a mod ZIP from [Releases](https://github.com/pengin0503/rimworld-sigh/releases), extract `SimpleSigh` into `RimWorld/Mods`, enable it after Core and restart. Check the release version: the older v0.1.0-test.1 lacks the Japanese and legibility fixes and v0.2 features. When available, the test artifact linked in the Japanese installation section can also be used. Select a constructed sign and choose **Edit text**. Removal from an existing save is not guaranteed safe.
+同梱フォントBIZ UDPゴシックは [SIL Open Font License 1.1](Fonts/BIZUDPGothic-OFL.txt) に基づいて配布されています。
