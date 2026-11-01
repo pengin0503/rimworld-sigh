@@ -88,7 +88,7 @@
 
 1. **[Releases（配布ページ）](https://github.com/pengin0503/rimworld-sigh/releases)** を開きます。リリースがまだ存在しない場合は、方法Bで試用できます。
    - **注意**：v0.2.0 のリリースが公開されるまで、Releases の最新は `v0.1.0-test.1` です。この版には日本語が「？」になる問題（#4）と文字が小さすぎる問題（#5）の修正、v0.2 の新機能が入っていません。v0.2 を試す場合は方法B（CIのZIP）を使ってください。
-   - リリースは `v0.2.0` のように About.xml の `modVersion` と一致するタグを main 上のコミットに付けると作成されます。タグと版が違う場合や、同梱DLLがソースと一致しない場合は公開しません。
+
 2. リリースの **Assets** から `SimpleSigh-vX.Y.Z.zip` をダウンロードします。GitHub が自動で表示する **Source code (zip)** はMOD用のZIPではありません。
 3. ZIPを**一度**展開します。中に `SimpleSigh` フォルダが1つあります。
 4. この `SimpleSigh` フォルダを、RimWorldインストール先の `Mods` フォルダにコピーします。
@@ -138,74 +138,6 @@ Workshop に出していないローカルMODでは警告が出るのが正常�
 - 個人で使う場合：RimSort の警告ウィンドウで Simple Sigh を **Ignore** にすれば、以後表示されません。
 - 架空のIDを書いたファイルを置かないでください。RimSort が別の Workshop アイテムとして扱い、更新確認などで誤動作します。
 
-### Steam Workshop にアップロードする場合
-
-`About` には Workshop 用の `Preview.png`（1280×720）、`ModIcon.png`、`modVersion` を用意してあります。
-
-1. Releases のZIPを展開した `SimpleSigh` フォルダ（実行時ファイルだけを含む）を `RimWorld/Mods/` に置きます。リポジトリ全体をアップロードしないでください。
-2. RimWorld の設定で開発モードを有効にし、MOD一覧で Simple Sigh を選んで「Steam Workshop にアップロード」を実行します。
-3. アップロード後、RimWorld が `About/PublishedFileId.txt` を作成します。以後の更新ではこのファイルを残したまま再アップロードしてください（ZIPを作り直す場合もリリース用パッケージャはこのファイルを含めます）。
-
-## 現在の検証状況
-
-| 確認項目 | 現状 |
-| --- | --- |
-| XML・構造テスト | 実装済み（RimWorld Coreを必要とする追加確認は環境次第） |
-| C#ユニットテスト（文章・描画レイアウト等） | 実装済み・CIあり |
-| ZIPが必要なファイルのみを含むか | 専用の回帰テストとCIで確認 |
-| 1.7参照アセンブリによるコンパイルと、同梱DLLがソースと一致するかの確認 | CIで実施（`Krafs.Rimworld.Ref` 1.7.4982、最新1.7でもコンパイル確認） |
-| 同梱フォントのラスタライズ（FreeTypeとの比較・単体テスト） | 実施済み（オフライン） |
-| 同梱フォントの日本語収録範囲（JIS第1・第2水準） | 単体テストで確認 |
-| 処理時間（オフライン、`docs/testing/performance.md`） | 看板1000枚のレイアウトで約0.1秒、毎フレームの処理は割り当てなし |
-| ゲームDLLを読み込むスモークテスト | 開発環境のみ（実ゲームのDLLが必要） |
-| **ゲーム本体でのプレイ** | **NOT RUN（未確認）** |
-
-![オフラインで描画したレイアウトプレビュー（ゲーム画面ではありません）](docs/images/offline-layout-preview.png)
-
-*上の画像はオフラインのプレビューです。MOD自身のレイアウト計算と、同梱フォントから作ったグリフアトラスを使って描いていますが、RimWorld内のスクリーンショットではありません。*
-
-## 開発・ビルド・配布の仕組み
-
-開発環境には .NET 10 SDK と Python 3 が必要です。
-MOD 本体は NuGet の参照専用パッケージ `Krafs.Rimworld.Ref`（ゲームのシグネチャのみ。Ludeon が参照目的での利用を許可）に対してコンパイルするため、
-ゲーム本体の DLL がなくてもビルドできます。固定している 1.7.4982-unstable は非公開の参照 DLL と同じビルドで、どちらに対してビルドしても同一の `SimpleSigh.dll` になります。
-ゲーム DLL はリポジトリや配布 ZIP には含めません。実ゲームの DLL を使う場合は `RIMWORLD_REFERENCE_DIR` を指定します（スモークテストはその場合のみ実行）。
-
-```bash
-tools/verify.sh            # 構造・パッケージ・単体テスト、Releaseビルド、同梱DLLとの一致確認
-python -m unittest discover -s Tests/PackagingTests -v
-python tools/package_release.py --version v0.2.0-test --output dist/SimpleSigh-v0.2.0-test.zip
-```
-
-`.github/workflows/ci.yml` はPRへの更新時にXMLテスト・C#単体テスト・MOD本体のビルド（コミット済みDLLとの一致確認を含む）・ZIPパッケージングテストを実行し、成功時は試用ZIPをArtifactとして添付します。
-ソースを変更したら `tools/verify.sh` で `1.7/Assemblies/SimpleSigh.dll` を再ビルドし、一緒にコミットしてください。
-
-`.github/workflows/release.yml` は **mainに含まれるコミットへ`v`で始まるタグをpushした場合**、または
-GitHubのActions → Simple Sigh prerelease → Run workflow でmainを選んでタグを入力した場合のみ、
-再度テスト・ZIP作成を行い（手動実行では検査に通った後でタグを作ります）、GitHub ReleaseのAssetsに直接ダウンロードできるZIPをアップロードします。
-ゲーム内テストが終わるまでは**プレリリース**として公開します。単なるPRのマージではReleaseは作られません。
-
-例（ゲーム内テスト未完了のテスト版タグを切る場合。**mainへマージ後**）：
-
-```bash
-git checkout main
-git pull --ff-only
-git tag v0.2.0-test.1
-git push origin v0.2.0-test.1
-```
-
-ゲーム内での確認は以下のチェックリストを参照してください：
-`docs/testing/m1-manual-checklist.md`、
-`docs/testing/m2-manual-checklist.md`、
-`docs/testing/m3-manual-checklist.md`、
-`docs/testing/japanese-and-legibility-checklist.md`（日本語表示・長い文字）、
-`docs/testing/v0.2-manual-checklist.md`（v0.2 の新機能）。
-
-オフラインプレビューの再生成：`python3 tools/preview/render_preview.py docs/images/offline-layout-preview.png`
-（`About/Preview.png`・`ModIcon.png` は `python3 tools/textures/generate_about_images.py`、建物のテクスチャは `python3 tools/textures/generate_textures.py`）
-
-その他の設計・実装判断は `docs/development/implementation-log.md` に記録されています。
-
 ## 制限・未検証事項
 
 - 同梱フォントによる日本語描画はオフラインで検証済みですが、ゲーム内（Waylith のテクスチャ転送・シェーダー）での表示は未確認です。
@@ -223,3 +155,9 @@ git push origin v0.2.0-test.1
 - 看板用フォント：**BIZ UDPゴシック**（Copyright 2022 The BIZ UDGothic Project Authors、株式会社モリサワ）。
   [SIL Open Font License 1.1](Fonts/BIZUDPGothic-OFL.txt) に基づき、改変せずに同梱しています。
   入手元：[google/fonts `ofl/bizudpgothic`](https://github.com/google/fonts/tree/main/ofl/bizudpgothic)。
+
+## English
+
+Simple Sigh adds editable signs to RimWorld 1.7: small and wall signs, 2×1 and 3×1 noticeboards, powered displays and floor signs. Edit text, size and color; v0.2 also adds bulk editing, alignment, clipboard support, shadows and blinking or scrolling powered displays. A sign list lets you search and locate signs. The bundled BIZ UDP Gothic font supports Japanese; unsupported characters such as emoji may display as question marks.
+
+**The v0.2 test version has not been verified in-game**, including rendering, save/load and power behavior. Back up saves. Harmony is not required. Download a mod ZIP from [Releases](https://github.com/pengin0503/rimworld-sigh/releases), extract `SimpleSigh` into `RimWorld/Mods`, enable it after Core and restart. Check the release version: the older v0.1.0-test.1 lacks the Japanese and legibility fixes and v0.2 features. When available, the test artifact linked in the Japanese installation section can also be used. Select a constructed sign and choose **Edit text**. Removal from an existing save is not guaranteed safe.
